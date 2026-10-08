@@ -6,10 +6,12 @@ import { Kbd } from "@/components/ui/kbd";
 import { DetailsCard } from "@/features/editor/details-card";
 import { ItemsCard } from "@/features/editor/items-card";
 import { PartiesCard } from "@/features/editor/parties-card";
+import { useSignInDialog } from "@/features/auth/sign-in-dialog";
 import { useEditor } from "@/features/editor/store";
 import { SummaryCard } from "@/features/editor/summary-card";
 import { InvoiceDocument } from "@/features/preview/invoice-document";
 import { ScaledPreview } from "@/features/preview/scaled-preview";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 export function EditorPage() {
@@ -39,7 +41,11 @@ export function EditorPage() {
   const downloadRef = useRef(downloadPdf);
   downloadRef.current = downloadPdf;
 
-  const promptSignIn = () => setToast("Sign in to save invoices and templates — coming soon.");
+  const signedIn = !!useSession().data;
+  const showSignIn = useSignInDialog((s) => s.show);
+  const save = () => (signedIn ? setToast("Saving invoices arrives in the next update.") : showSignIn("save this invoice"));
+  const saveRef = useRef(save);
+  saveRef.current = save;
 
   useEffect(() => {
     if (!toast) return;
@@ -59,7 +65,7 @@ export function EditorPage() {
       const key = e.key.toLowerCase();
       if (key === "s") {
         e.preventDefault();
-        promptSignIn();
+        saveRef.current();
       } else if (key === "e" && e.shiftKey) {
         e.preventDefault();
         void downloadRef.current();
@@ -88,9 +94,9 @@ export function EditorPage() {
           >
             <RotateCcw /> <span className="hidden lg:inline">{confirmReset ? "sure? click again" : "new"}</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={promptSignIn} title="Sign in to save">
+          <Button variant="ghost" size="sm" onClick={save} title={signedIn ? "Save (⌘S)" : "Sign in to save"}>
             <Save /> <span className="hidden lg:inline">save</span>
-            <Lock className="size-3! opacity-60" />
+            {!signedIn && <Lock className="size-3! opacity-60" />}
           </Button>
           <Button size="sm" onClick={() => window.print()} title="Print (⌘P)">
             <Printer /> <span className="hidden sm:inline">print</span>
@@ -139,7 +145,7 @@ export function EditorPage() {
           <ItemsCard />
           <SummaryCard />
           <p className="pb-4 text-center font-mono text-[11px] text-muted">
-            guest draft lives in this tab only · <Kbd>⌘</Kbd>
+            {signedIn ? "draft autosaves in this tab" : "guest draft lives in this tab only"} · <Kbd>⌘</Kbd>
             <Kbd>P</Kbd> print · <Kbd>⌘</Kbd>
             <Kbd>⇧</Kbd>
             <Kbd>E</Kbd> pdf

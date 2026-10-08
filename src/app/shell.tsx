@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router";
-import { FilePlus2, Files, LayoutTemplate, Lock, Menu, Moon, Settings, Sun, Users, X } from "lucide-react";
+import { FilePlus2, Files, LayoutTemplate, Lock, LogOut, Menu, Moon, Settings, Sun, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SignInDialog, useSignInDialog } from "@/features/auth/sign-in-dialog";
+import { signOut, useSession } from "@/lib/auth-client";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -46,8 +48,54 @@ function ApiStatus() {
   );
 }
 
+function AccountCard() {
+  const { data, isPending } = useSession();
+  const show = useSignInDialog((s) => s.show);
+
+  if (isPending) return <div className="h-[118px] animate-pulse rounded-lg border border-border bg-surface" />;
+
+  if (!data)
+    return (
+      <div className="rounded-lg border border-border bg-surface p-3">
+        <div className="font-mono text-xs text-text">guest mode</div>
+        <p className="mt-1 text-xs leading-relaxed text-muted">Create and download freely. Sign in to save invoices and templates.</p>
+        <Button variant="primary" size="sm" className="mt-3 w-full font-mono text-xs" onClick={() => show()}>
+          sign_in()
+        </Button>
+      </div>
+    );
+
+  const { name, email, image } = data.user;
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-surface p-2.5">
+      {image ? (
+        <img src={image} alt="" className="size-8 shrink-0 rounded-md" referrerPolicy="no-referrer" />
+      ) : (
+        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-accent-soft font-mono text-sm text-accent">
+          {(name || email).charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 flex-1 leading-tight">
+        <div className="truncate text-sm font-medium">{name || email}</div>
+        <div className="truncate font-mono text-[11px] text-muted">{email}</div>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0"
+        onClick={() => signOut()}
+        aria-label="Sign out"
+        title="Sign out"
+      >
+        <LogOut className="size-3.5!" />
+      </Button>
+    </div>
+  );
+}
+
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { theme, toggle } = useTheme();
+  const signedIn = !!useSession().data;
   return (
     <div className="flex h-full flex-col gap-6 p-4">
       <Logo />
@@ -70,7 +118,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               <>
                 <Icon className={cn("size-4", isActive && "text-accent")} />
                 <span className="flex-1">{label}</span>
-                {locked && <Lock className="size-3 opacity-50" aria-label="Sign in required" />}
+                {locked && !signedIn && <Lock className="size-3 opacity-50" aria-label="Sign in required" />}
               </>
             )}
           </NavLink>
@@ -78,15 +126,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="mt-auto flex flex-col gap-3">
-        <div className="rounded-lg border border-border bg-surface p-3">
-          <div className="font-mono text-xs text-text">guest mode</div>
-          <p className="mt-1 text-xs leading-relaxed text-muted">
-            Create and download freely. Sign in to save invoices and templates.
-          </p>
-          <Button variant="primary" size="sm" className="mt-3 w-full font-mono text-xs" disabled title="Coming in milestone 4">
-            sign_in()
-          </Button>
-        </div>
+        <AccountCard />
         <div className="flex items-center justify-between">
           <ApiStatus />
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
@@ -128,6 +168,7 @@ export function AppShell() {
       <main className="min-w-0 flex-1 overflow-y-auto pt-14 md:pt-0">
         <Outlet />
       </main>
+      <SignInDialog />
     </div>
   );
 }

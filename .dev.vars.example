@@ -1,0 +1,8 @@
+# Copy to .dev.vars for local development.
+BETTER_AUTH_URL=http://localhost:5173
+COOKIE_DOMAIN=
+BETTER_AUTH_SECRET=generate-with-openssl-rand-base64-32
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
