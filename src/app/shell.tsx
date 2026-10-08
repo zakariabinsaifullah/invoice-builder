@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
-import { FilePlus2, Files, LayoutTemplate, Lock, LogOut, Menu, Moon, Settings, Sun, Users, X } from "lucide-react";
+import { FilePlus2, Files, LayoutTemplate, Loader2, Lock, LogOut, Menu, Moon, Settings, Sun, Users, X } from "lucide-react";
 import { Toaster } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { SignInDialog, useSignInDialog } from "@/features/auth/sign-in-dialog";
 import { useEditor } from "@/features/editor/store";
 import { SaveTemplateDialog } from "@/features/templates/save-template-dialog";
+import { CommandPalette, useCommandPalette } from "@/features/command/command-palette";
 import { signOut, useSession } from "@/lib/auth-client";
 import { queryClient } from "@/lib/queries";
 import { useTheme } from "@/lib/theme";
@@ -112,6 +113,16 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col gap-6 p-4">
       <Logo />
+      <button
+        onClick={() => {
+          onNavigate?.();
+          useCommandPalette.getState().set(true);
+        }}
+        className="flex h-8 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-left font-mono text-xs text-muted transition-colors hover:border-border-strong hover:text-text"
+      >
+        <span className="flex-1">search / commands</span>
+        <kbd className="rounded border border-border px-1 text-[10px]">⌘K</kbd>
+      </button>
       <nav className="flex flex-col gap-0.5">
         <div className="mb-1 px-2 font-mono text-[10px] uppercase tracking-widest text-muted">// workspace</div>
         {NAV.map(({ to, label, icon: Icon, locked }) => (
@@ -155,6 +166,12 @@ export function AppShell() {
   const [open, setOpen] = useState(false);
   return (
     <div className="flex h-full">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-accent px-3 py-2 font-mono text-xs text-accent-fg focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+      >
+        skip to content
+      </a>
       <aside className="hidden w-60 shrink-0 border-r border-border bg-bg md:block">
         <Sidebar />
       </aside>
@@ -178,10 +195,19 @@ export function AppShell() {
         </div>
       )}
 
-      <main className="min-w-0 flex-1 overflow-y-auto pt-14 md:pt-0">
-        <Outlet />
+      <main id="main" className="min-w-0 flex-1 overflow-y-auto pt-14 md:pt-0">
+        <Suspense
+          fallback={
+            <div className="grid h-64 place-items-center text-muted">
+              <Loader2 className="size-5 animate-spin" />
+            </div>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
       <SignInDialog />
+      <CommandPalette />
       <SaveTemplateDialog />
       <Toaster />
     </div>

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Copy, LayoutTemplate, Loader2, Pencil, Pin, Search, Trash2, Zap } from "lucide-react";
-import { applyTemplate, TEMPLATE_PART_INFO, type TemplateSummary } from "@shared/templates";
+import { applyTemplate, TEMPLATE_PART_INFO } from "@shared/template-core";
+import type { TemplateSummary } from "@shared/templates";
 import { toast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

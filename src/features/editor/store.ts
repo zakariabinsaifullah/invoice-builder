@@ -45,7 +45,7 @@ export function invoiceFromProfile({ profile: p, nextInvoiceNumber }: ProfileRes
     notes: p.notes,
     paymentInfo: p.paymentInfo,
     terms: p.terms,
-    style: { ...base.style, logo: p.logo },
+    style: { ...base.style, logo: p.logo, layout: p.layout ?? "mono", ...(p.accent && { accent: p.accent }) },
   };
 }
 

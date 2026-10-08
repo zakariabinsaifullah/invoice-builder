@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
 import { Loader2, Pin } from "lucide-react";
-import { defaultTemplateName, extractTemplate, TEMPLATE_PART_INFO, TEMPLATE_PARTS, type TemplatePart } from "@shared/templates";
+import { defaultTemplateName, extractTemplate, TEMPLATE_PART_INFO, TEMPLATE_PARTS, type TemplatePart } from "@shared/template-core";
 import { toast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -65,7 +65,7 @@ export function SaveTemplateDialog() {
       items: items.length ? `${items.length} item${items.length > 1 ? "s" : ""}` : "none",
       adjustments: [invoice.taxRate && `tax ${invoice.taxRate}%`, invoice.discount.value && "discount", invoice.shipping && "shipping"].filter(Boolean).join(", ") || "none",
       notes: [invoice.paymentInfo && "payment", invoice.notes && "notes", invoice.terms && "terms"].filter(Boolean).join(", ") || "empty",
-      settings: `${invoice.currency} · ${invoice.termsDays === null ? "custom due" : `net ${invoice.termsDays}`}`,
+      settings: `${invoice.currency} · ${invoice.termsDays === null ? "custom due" : `net ${invoice.termsDays}`} · ${invoice.style.layout}`,
     };
   }, [invoice]);
 

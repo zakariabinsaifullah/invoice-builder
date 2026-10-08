@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Download, Loader2, Save } from "lucide-react";
 import { CURRENCIES, PAYMENT_TERMS } from "@shared/constants";
-import { formatInvoiceNumber, type Profile } from "@shared/api";
+import type { Profile } from "@shared/api";
+import { formatInvoiceNumber } from "@shared/numbering";
 import { LogoInput } from "@/components/logo-input";
+import { StylePicker } from "@/components/style-picker";
 import { toast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { Field, Input, NumberInput, Select, Textarea } from "@/components/ui/input";
@@ -133,6 +135,12 @@ export function SettingsPage() {
                 <Textarea rows={2} value={form.terms} onChange={(e) => set("terms", e.target.value)} />
               </Field>
             </div>
+          </Card>
+        </Section>
+
+        <Section label="style" hint="Default look for new invoices. Each invoice can still change it.">
+          <Card label="invoice_style">
+            <StylePicker layout={form.layout} accent={form.accent} onChange={(v) => setForm({ ...form, ...v })} />
           </Card>
         </Section>
 

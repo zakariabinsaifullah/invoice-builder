@@ -22,5 +22,10 @@
     // Share the session cookie across *.tinytools.work so future tools can reuse sign-in.
     "COOKIE_DOMAIN": "tinytools.work"
   },
+  // Per-key limits (sign-in by IP, writes by user). Generous for people, tight for scripts.
+  "ratelimits": [
+    { "name": "AUTH_LIMITER", "namespace_id": "4101", "simple": { "limit": 20, "period": 60 } },
+    { "name": "WRITE_LIMITER", "namespace_id": "4102", "simple": { "limit": 120, "period": 60 } }
+  ],
   "observability": { "enabled": true }
 }

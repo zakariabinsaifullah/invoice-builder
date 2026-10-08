@@ -11,6 +11,7 @@ import { DetailsCard } from "@/features/editor/details-card";
 import { ItemsCard } from "@/features/editor/items-card";
 import { PartiesCard } from "@/features/editor/parties-card";
 import { invoiceFromProfile, snapshot, useEditor } from "@/features/editor/store";
+import { StyleCard } from "@/features/editor/style-card";
 import { SummaryCard } from "@/features/editor/summary-card";
 import { displayStatus, StatusBadge } from "@/features/invoices/status";
 import { InvoiceDocument } from "@/features/preview/invoice-document";
@@ -19,6 +20,7 @@ import { QuickStart } from "@/features/templates/quick-start";
 import { useSaveTemplateDialog } from "@/features/templates/save-template-dialog";
 import { HttpError } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
+import { onEditorCommand } from "@/lib/commands";
 import { useInvoice, useProfile, useSaveInvoice, useSetInvoiceStatus } from "@/lib/queries";
 import { timeAgo } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -149,6 +151,19 @@ export function EditorPage() {
   const downloadRef = useRef(downloadPdf);
   downloadRef.current = downloadPdf;
 
+  const templateRef = useRef(saveAsTemplate);
+  templateRef.current = saveAsTemplate;
+  useEffect(
+    () =>
+      onEditorCommand((cmd) => {
+        if (cmd === "save") void saveRef.current();
+        else if (cmd === "pdf") void downloadRef.current();
+        else if (cmd === "print") setTimeout(() => window.print(), 50); // let the palette close first
+        else if (cmd === "template") templateRef.current();
+      }),
+    [],
+  );
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
@@ -255,12 +270,12 @@ export function EditorPage() {
           >
             {saveMutation.isPending ? <Loader2 className="animate-spin" /> : <Save />}
             <span className="hidden lg:inline">save</span>
-            {!signedIn && <Lock className="size-3! opacity-60" />}
+            {!signedIn && <Lock className="hidden size-3! opacity-60 sm:inline" />}
             {signedIn && dirty && <span className="size-1.5 rounded-full bg-warn" aria-label="Unsaved changes" />}
           </Button>
           <Button variant="ghost" size="sm" onClick={saveAsTemplate} title="Save as template">
             <LayoutTemplate /> <span className="hidden lg:inline">template</span>
-            {!signedIn && <Lock className="size-3! opacity-60" />}
+            {!signedIn && <Lock className="hidden size-3! opacity-60 sm:inline" />}
           </Button>
           <Button size="sm" onClick={() => window.print()} title="Print (⌘P)">
             <Printer /> <span className="hidden sm:inline">print</span>
@@ -309,6 +324,7 @@ export function EditorPage() {
           <PartiesCard />
           <ItemsCard />
           <SummaryCard />
+          <StyleCard />
           <p className="pb-4 text-center font-mono text-[11px] text-muted">
             {signedIn ? (
               <>

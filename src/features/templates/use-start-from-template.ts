@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { applyTemplate } from "@shared/templates";
+import { applyTemplate } from "@shared/template-core";
 import { toast } from "@/components/toaster";
 import { blankInvoice, invoiceFromProfile, newId, useEditor } from "@/features/editor/store";
 import { useProfile, useUseTemplate } from "@/lib/queries";

@@ -12,6 +12,30 @@ import { getDb } from "./lib";
 
 const app = new Hono<AppEnv>().basePath("/api");
 
+// Baseline headers on every API response.
+app.use("*", async (c, next) => {
+  await next();
+  c.header("x-content-type-options", "nosniff");
+  c.header("referrer-policy", "strict-origin-when-cross-origin");
+  if (!c.res.headers.has("cache-control")) c.header("cache-control", "no-store");
+});
+
+type Limiter = { limit: (o: { key: string }) => Promise<{ success: boolean }> };
+const limited = (c: { header: (k: string, v: string) => void; json: (b: unknown, s: 429) => Response }) => {
+  c.header("retry-after", "60");
+  return c.json({ error: "rate_limited", message: "Too many requests — try again in a minute." }, 429);
+};
+
+// Sign-in / sign-out / callbacks: limit per client IP.
+app.use("/auth/*", async (c, next) => {
+  const limiter = (c.env as Env & { AUTH_LIMITER?: Limiter }).AUTH_LIMITER;
+  if (limiter && c.req.method === "POST") {
+    const ip = c.req.header("cf-connecting-ip") ?? "local";
+    if (!(await limiter.limit({ key: `auth:${ip}` })).success) return limited(c);
+  }
+  await next();
+});
+
 app.get("/health", (c) => c.json({ ok: true, service: "invoice-builder", time: new Date().toISOString() }));
 
 // Which sign-in buttons the client should show.
@@ -24,6 +48,9 @@ export const requireUser = createMiddleware<AppEnv>(async (c, next) => {
   const session = await createAuth(c.env).api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "unauthorized" }, 401);
   c.set("user", session.user);
+  // Writes are limited per user.
+  const limiter = (c.env as Env & { WRITE_LIMITER?: Limiter }).WRITE_LIMITER;
+  if (limiter && c.req.method !== "GET" && !(await limiter.limit({ key: `write:${session.user.id}` })).success) return limited(c);
   await next();
 });
 

@@ -15,6 +15,8 @@ export const profileSchema = z.object({
   notes: z.string().max(2000),
   paymentInfo: z.string().max(2000),
   terms: z.string().max(2000),
+  layout: invoiceSchema.shape.style.shape.layout,
+  accent: invoiceSchema.shape.style.shape.accent,
 });
 
 export type Profile = z.infer<typeof profileSchema>;
@@ -30,6 +32,7 @@ export const DEFAULT_PROFILE: Profile = {
   notes: "",
   paymentInfo: "",
   terms: "",
+  layout: "mono",
 };
 
 export type ProfileResponse = { profile: Profile; nextNumber: number; nextInvoiceNumber: string };
@@ -39,17 +42,7 @@ export const profileUpdateSchema = z.object({
   nextNumber: z.number().int().min(1).max(99_999_999).optional(),
 });
 
-export function formatInvoiceNumber(p: Pick<Profile, "numberPrefix" | "numberPadding">, n: number, year = new Date().getFullYear()) {
-  return p.numberPrefix.replaceAll("{YYYY}", String(year)) + String(n).padStart(p.numberPadding, "0");
-}
-
-/** If `number` follows the profile pattern, the sequence value it uses (else null). */
-export function parseInvoiceNumber(p: Pick<Profile, "numberPrefix">, number: string, year: number): number | null {
-  const prefix = p.numberPrefix.replaceAll("{YYYY}", String(year));
-  if (!number.startsWith(prefix)) return null;
-  const rest = number.slice(prefix.length);
-  return /^\d{1,9}$/.test(rest) ? Number(rest) : null;
-}
+export { formatInvoiceNumber, parseInvoiceNumber } from "./numbering";
 
 // ── Invoices ──────────────────────────────────────────────────────────────
 

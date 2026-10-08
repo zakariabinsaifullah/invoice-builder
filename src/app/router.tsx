@@ -1,12 +1,15 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router";
 import { AppShell } from "@/app/shell";
 import { EditorPage } from "@/app/pages/editor";
 import { PlaceholderPage } from "@/app/pages/placeholder";
 import { RequireAuth } from "@/features/auth/require-auth";
-import { InvoicesPage } from "@/features/invoices/invoices-page";
-import { SettingsPage } from "@/features/settings/settings-page";
-import { TemplatesPage } from "@/features/templates/templates-page";
-import { ClientsPage } from "@/features/clients/clients-page";
+
+// Secondary pages load on demand; the editor (landing page) ships in the main bundle.
+const InvoicesPage = lazy(() => import("@/features/invoices/invoices-page").then((m) => ({ default: m.InvoicesPage })));
+const TemplatesPage = lazy(() => import("@/features/templates/templates-page").then((m) => ({ default: m.TemplatesPage })));
+const ClientsPage = lazy(() => import("@/features/clients/clients-page").then((m) => ({ default: m.ClientsPage })));
+const SettingsPage = lazy(() => import("@/features/settings/settings-page").then((m) => ({ default: m.SettingsPage })));
 
 export const router = createBrowserRouter([
   {

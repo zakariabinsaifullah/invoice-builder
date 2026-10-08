@@ -1,6 +1,7 @@
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { InvoiceData, Party } from "@shared/invoice";
 import { computeTotals, formatMinor, lineAmountMinor } from "@shared/money";
+import { DEFAULT_ACCENT } from "@shared/constants";
 import { formatDate } from "@/lib/dates";
 
 // Mirrors InvoiceDocument (HTML). Sizes are the HTML px values × 0.75 (A4: 794px ↔ 595pt).
@@ -19,7 +20,16 @@ export function registerPdfFonts(base = "/fonts/") {
       { src: `${base}JetBrainsMono-Bold.ttf`, fontWeight: 700 },
     ],
   });
-  // Fallbacks for glyphs JetBrains Mono lacks (₹ ₩ ₦…, Bengali, Devanagari, Arabic).
+  Font.register({
+    family: "Geist",
+    fonts: [
+      { src: `${base}Geist-Regular.ttf`, fontWeight: 400 },
+      { src: `${base}Geist-Medium.ttf`, fontWeight: 500 },
+      { src: `${base}Geist-SemiBold.ttf`, fontWeight: 600 },
+      { src: `${base}Geist-Bold.ttf`, fontWeight: 700 },
+    ],
+  });
+  // Fallbacks for glyphs the primary fonts lack (₹ ₩ ₦…, Bengali, Devanagari, Arabic).
   // Registration is free; a family's files are only fetched when a page lists it.
   for (const f of FALLBACKS) {
     Font.register({
@@ -44,7 +54,8 @@ const FALLBACKS = [
 /** Primary font plus only the fallbacks this invoice's text actually needs. */
 function fontStack(invoice: InvoiceData): string[] {
   const text = JSON.stringify({ ...invoice, style: null }) + formatMinor(123456, invoice.currency);
-  return ["JetBrains Mono", ...FALLBACKS.filter((f) => f.test.test(text)).map((f) => f.family)];
+  const primary = invoice.style.layout === "minimal" ? "Geist" : "JetBrains Mono";
+  return [primary, ...FALLBACKS.filter((f) => f.test.test(text)).map((f) => f.family)];
 }
 
 /** Stored logos are same-origin paths; the PDF renderer fetches with an absolute URL. */
@@ -60,7 +71,7 @@ const c = {
   s300: "#d6d3d1",
   s200: "#e7e5e4",
   s100: "#f5f5f4",
-  accent: "#059669",
+  s50: "#fafaf9",
 };
 
 const s = StyleSheet.create({
@@ -88,7 +99,7 @@ const s = StyleSheet.create({
   totals: { marginTop: 18, marginLeft: "auto", width: 216 },
   totalLine: { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
   grand: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4, paddingTop: 8, borderTopWidth: 0.75, borderTopColor: c.s300 },
-  grandValue: { fontSize: 12.75, fontWeight: 700, color: c.accent, lineHeight: 1.2 },
+  grandValue: { fontSize: 12.75, fontWeight: 700, lineHeight: 1.2 },
   sections: { flexDirection: "row", flexWrap: "wrap", marginTop: 36 },
   section: { width: "50%", paddingRight: 15, marginBottom: 18 },
   // lineHeight lives on `body`, not the page: a `render` text that inherits lineHeight is silently dropped by react-pdf.
@@ -126,57 +137,47 @@ function TotalLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function InvoicePdf({ invoice }: { invoice: InvoiceData }) {
-  const t = computeTotals(invoice);
-  const money = (minor: number) => formatMinor(minor, invoice.currency, t.digits);
-  const items = invoice.items.filter((i) => i.description || i.rate || i.quantity !== 1);
-  const sections = (
-    [
-      ["payment", invoice.paymentInfo],
-      ["notes", invoice.notes],
-      ["terms", invoice.terms],
-    ] as const
-  ).filter(([, text]) => text.trim());
+type BodyProps = {
+  invoice: InvoiceData;
+  t: ReturnType<typeof computeTotals>;
+  money: (minor: number) => string;
+  items: InvoiceData["items"];
+  sections: (readonly [string, string])[];
+  accent: string;
+};
 
+function MonoBody({ invoice, t, money, items, sections, accent }: BodyProps) {
   return (
-    <Document
-      title={`Invoice ${invoice.number}`}
-      author={invoice.from.name || undefined}
-      subject={invoice.to.name ? `Invoice for ${invoice.to.name}` : undefined}
-      creator="Invoice Builder · tinytools.work"
-      producer="Invoice Builder · tinytools.work"
-    >
-      <Page size="A4" style={[s.page, { fontFamily: fontStack(invoice) }]}>
-        <View style={s.body}>
-        <View style={s.header}>
-          <View>
-            {invoice.style.logo ? <Image src={absoluteUrl(invoice.style.logo)} style={s.logo} /> : null}
-            <Text style={s.title}>
-              INVOICE<Text style={{ color: c.accent }}>_</Text>
-            </Text>
-            <Text style={s.number}>#{invoice.number}</Text>
-          </View>
-          <View style={s.row}>
-            <View>
-              <Text style={s.metaLabel}>issued</Text>
-              <Text style={s.metaLabel}>due</Text>
-              <Text style={s.metaLabel}>amount_due</Text>
-            </View>
-            <View>
-              <Text style={s.metaValue}>{formatDate(invoice.issueDate)}</Text>
-              <Text style={s.metaValue}>{formatDate(invoice.dueDate)}</Text>
-              <Text style={[s.metaValue, { color: c.accent, fontWeight: 600 }]}>{money(t.total)}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={s.parties}>
-          <PartyBlock label="from" party={invoice.from} />
-          <PartyBlock label="bill_to" party={invoice.to} />
-        </View>
-
-        {/* Header is fixed inside the table view, so it repeats only on pages the item rows reach. */}
+    <View style={s.body}>
+      <View style={s.header}>
         <View>
+          {invoice.style.logo ? <Image src={absoluteUrl(invoice.style.logo)} style={s.logo} /> : null}
+          <Text style={s.title}>
+            INVOICE<Text style={{ color: accent }}>_</Text>
+          </Text>
+          <Text style={s.number}>#{invoice.number}</Text>
+        </View>
+        <View style={s.row}>
+          <View>
+            <Text style={s.metaLabel}>issued</Text>
+            <Text style={s.metaLabel}>due</Text>
+            <Text style={s.metaLabel}>amount_due</Text>
+          </View>
+          <View>
+            <Text style={s.metaValue}>{formatDate(invoice.issueDate)}</Text>
+            <Text style={s.metaValue}>{formatDate(invoice.dueDate)}</Text>
+            <Text style={[s.metaValue, { color: accent, fontWeight: 600 }]}>{money(t.total)}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={s.parties}>
+        <PartyBlock label="from" party={invoice.from} />
+        <PartyBlock label="bill_to" party={invoice.to} />
+      </View>
+
+      {/* Header is fixed inside the table view, so it repeats only on pages the item rows reach. */}
+      <View>
         <View style={s.thead} fixed>
           <Text style={[s.th, { width: 24 }]}>#</Text>
           <Text style={[s.th, { flex: 1 }]}>description</Text>
@@ -193,38 +194,184 @@ export function InvoicePdf({ invoice }: { invoice: InvoiceData }) {
             <Text style={s.cAmt}>{money(lineAmountMinor(item, t.digits))}</Text>
           </View>
         ))}
-        </View>
+      </View>
 
-        <View style={s.totals} wrap={false}>
-          <TotalLine label="subtotal" value={money(t.subtotal)} />
-          {t.discount > 0 && (
-            <TotalLine
-              label={invoice.discount.type === "percent" ? `discount (${invoice.discount.value}%)` : "discount"}
-              value={`−${money(t.discount)}`}
-            />
-          )}
-          {invoice.taxRate > 0 && <TotalLine label={`tax (${invoice.taxRate}%)`} value={money(t.tax)} />}
-          {t.shipping > 0 && <TotalLine label="shipping" value={money(t.shipping)} />}
-          <View style={s.grand}>
-            <Text style={s.muted}>
-              total <Text style={{ color: c.s400 }}>{invoice.currency}</Text>
-            </Text>
-            <Text style={s.grandValue}>{money(t.total)}</Text>
-          </View>
-        </View>
-
-        {sections.length > 0 && (
-          <View style={s.sections}>
-            {sections.map(([label, text]) => (
-              <View key={label} style={s.section} wrap={false}>
-                <Text style={s.label}>// {label}</Text>
-                <Text style={{ marginTop: 3, color: c.s600 }}>{text}</Text>
-              </View>
-            ))}
-          </View>
+      <View style={s.totals} wrap={false}>
+        <TotalLine label="subtotal" value={money(t.subtotal)} />
+        {t.discount > 0 && (
+          <TotalLine
+            label={invoice.discount.type === "percent" ? `discount (${invoice.discount.value}%)` : "discount"}
+            value={`−${money(t.discount)}`}
+          />
         )}
-
+        {invoice.taxRate > 0 && <TotalLine label={`tax (${invoice.taxRate}%)`} value={money(t.tax)} />}
+        {t.shipping > 0 && <TotalLine label="shipping" value={money(t.shipping)} />}
+        <View style={s.grand}>
+          <Text style={s.muted}>
+            total <Text style={{ color: c.s400 }}>{invoice.currency}</Text>
+          </Text>
+          <Text style={[s.grandValue, { color: accent }]}>{money(t.total)}</Text>
         </View>
+      </View>
+
+      {sections.length > 0 && (
+        <View style={s.sections}>
+          {sections.map(([label, text]) => (
+            <View key={label} style={s.section} wrap={false}>
+              <Text style={s.label}>// {label}</Text>
+              <Text style={{ marginTop: 3, color: c.s600 }}>{text}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// Minimal layout (HTML px × 0.75)
+const m = StyleSheet.create({
+  body: { fontSize: 9, lineHeight: 1.55 },
+  label: { fontSize: 7.5, fontWeight: 600, letterSpacing: 0.9, color: c.s400, textTransform: "uppercase" },
+  box: { flex: 1, backgroundColor: c.s50, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
+  boxValue: { marginTop: 2, fontSize: 10.5, fontWeight: 600, color: c.s900 },
+  partyName: { marginTop: 6, fontSize: 10.5, fontWeight: 600, color: c.s900 },
+  thead: { flexDirection: "row", marginTop: 30, backgroundColor: c.s50, borderRadius: 4, paddingVertical: 7 },
+  tr: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 0.75, borderBottomColor: c.s100 },
+  cDesc: { flex: 1, paddingHorizontal: 9, color: c.s800 },
+  cQty: { width: 48, textAlign: "right" },
+  cRate: { width: 84, textAlign: "right" },
+  cAmt: { width: 96, textAlign: "right", paddingRight: 9, fontWeight: 500, color: c.s900 },
+});
+
+function MinimalBody({ invoice, t, money, items, sections, accent }: BodyProps) {
+  const sectionTitle = (k: string) => (k === "payment" ? "Payment details" : k[0].toUpperCase() + k.slice(1));
+  return (
+    <View style={m.body}>
+      <View style={s.header}>
+        <View>
+          {invoice.style.logo ? (
+            <Image src={absoluteUrl(invoice.style.logo)} style={s.logo} />
+          ) : (
+            <Text style={{ fontSize: 13.5, fontWeight: 600, color: c.s900 }}>{invoice.from.name}</Text>
+          )}
+        </View>
+        <View>
+          <Text style={{ fontSize: 22.5, fontWeight: 600, color: accent, textAlign: "right", lineHeight: 1 }}>Invoice</Text>
+          <Text style={{ marginTop: 6, color: c.s500, textAlign: "right" }}>{invoice.number}</Text>
+        </View>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: 9, marginTop: 30 }}>
+        {(
+          [
+            ["Issued", formatDate(invoice.issueDate), false],
+            ["Due", formatDate(invoice.dueDate), false],
+            ["Amount due", money(t.total), true],
+          ] as const
+        ).map(([k, v, hi]) => (
+          <View key={k} style={m.box}>
+            <Text style={m.label}>{k}</Text>
+            <Text style={[m.boxValue, hi ? { color: accent } : {}]}>{v}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ flexDirection: "row", marginTop: 30 }}>
+        {(
+          [
+            ["From", invoice.from],
+            ["Bill to", invoice.to],
+          ] as const
+        ).map(([label, p]) => (
+          <View key={label} style={s.party}>
+            <Text style={m.label}>{label}</Text>
+            <Text style={m.partyName}>{p.name || " "}</Text>
+            <View style={{ marginTop: 2 }}>
+              {p.address ? <Text style={s.muted}>{p.address}</Text> : null}
+              {p.email ? <Text style={s.muted}>{p.email}</Text> : null}
+              {p.phone ? <Text style={s.muted}>{p.phone}</Text> : null}
+              {p.taxId ? <Text style={s.muted}>Tax ID: {p.taxId}</Text> : null}
+            </View>
+          </View>
+        ))}
+      </View>
+
+      <View>
+        <View style={m.thead} fixed>
+          <Text style={[m.label, m.cDesc, { color: c.s400 }]}>Description</Text>
+          <Text style={[m.label, m.cQty]}>Qty</Text>
+          <Text style={[m.label, m.cRate]}>Rate</Text>
+          <Text style={[m.label, m.cAmt, { color: c.s400, fontWeight: 600 }]}>Amount</Text>
+        </View>
+        {items.map((item) => (
+          <View key={item.id} style={m.tr} wrap={false}>
+            <Text style={m.cDesc}>{item.description}</Text>
+            <Text style={m.cQty}>{item.quantity}</Text>
+            <Text style={m.cRate}>{money(Math.round(item.rate * 10 ** t.digits))}</Text>
+            <Text style={m.cAmt}>{money(lineAmountMinor(item, t.digits))}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={[s.totals, { paddingHorizontal: 9 }]} wrap={false}>
+        <TotalLine label="Subtotal" value={money(t.subtotal)} />
+        {t.discount > 0 && (
+          <TotalLine
+            label={invoice.discount.type === "percent" ? `Discount (${invoice.discount.value}%)` : "Discount"}
+            value={`−${money(t.discount)}`}
+          />
+        )}
+        {invoice.taxRate > 0 && <TotalLine label={`Tax (${invoice.taxRate}%)`} value={money(t.tax)} />}
+        {t.shipping > 0 && <TotalLine label="Shipping" value={money(t.shipping)} />}
+        <View style={[s.grand, { borderTopWidth: 1.5, borderTopColor: accent }]}>
+          <Text style={{ fontWeight: 600, color: c.s900 }}>Total {invoice.currency}</Text>
+          <Text style={[s.grandValue, { color: accent, fontWeight: 600, fontSize: 13.5 }]}>{money(t.total)}</Text>
+        </View>
+      </View>
+
+      {sections.length > 0 && (
+        <View style={s.sections}>
+          {sections.map(([key, text]) => (
+            <View key={key} style={s.section} wrap={false}>
+              <Text style={m.label}>{sectionTitle(key)}</Text>
+              <Text style={{ marginTop: 4, color: c.s600 }}>{text}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+export function InvoicePdf({ invoice }: { invoice: InvoiceData }) {
+  const t = computeTotals(invoice);
+  const props: BodyProps = {
+    invoice,
+    t,
+    money: (minor: number) => formatMinor(minor, invoice.currency, t.digits),
+    items: invoice.items.filter((i) => i.description || i.rate || i.quantity !== 1),
+    sections: (
+      [
+        ["payment", invoice.paymentInfo],
+        ["notes", invoice.notes],
+        ["terms", invoice.terms],
+      ] as const
+    ).filter(([, text]) => text.trim()),
+    accent: invoice.style.accent ?? DEFAULT_ACCENT,
+  };
+  const minimal = invoice.style.layout === "minimal";
+
+  return (
+    <Document
+      title={`Invoice ${invoice.number}`}
+      author={invoice.from.name || undefined}
+      subject={invoice.to.name ? `Invoice for ${invoice.to.name}` : undefined}
+      creator="Invoice Builder · tinytools.work"
+      producer="Invoice Builder · tinytools.work"
+    >
+      <Page size="A4" style={[s.page, { fontFamily: fontStack(invoice) }, minimal ? { paddingTop: 0 } : {}]}>
+        {minimal && <View style={{ height: 4.5, backgroundColor: props.accent, marginHorizontal: -42, marginBottom: 36 }} fixed />}
+        {minimal ? <MinimalBody {...props} /> : <MonoBody {...props} />}
 
         {/* Two separate fixed nodes: a dynamic `render` Text inside a flex row makes react-pdf drop the whole row. */}
         <Text style={[s.footer, { left: 42 }]} fixed>

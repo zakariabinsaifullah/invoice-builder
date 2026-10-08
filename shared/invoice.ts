@@ -23,6 +23,11 @@ export const discountSchema = z.object({
 
 export const invoiceStyleSchema = z.object({
   layout: z.enum(["mono", "minimal"]).default("mono"),
+  /** Accent colour (hex). Absent = the layout's default. */
+  accent: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
   /**
    * Either a PNG/JPEG data URL (fresh upload or guest draft) or a stored-logo path
    * (`/api/logos/<user>/<sha256>.png`) — the server swaps data URLs for paths on save.

@@ -13,3 +13,21 @@ export const PAYMENT_TERMS: { label: string; days: number | null }[] = [
 export const CURRENCIES = [
   "USD", "EUR", "GBP", "CAD", "AUD", "INR", "BDT", "PKR", "AED", "SGD", "JPY", "CNY", "CHF", "SEK", "NZD", "BRL", "MXN", "ZAR",
 ] as const;
+
+/** Print-safe accent colours for invoices. */
+export const ACCENTS = [
+  { name: "emerald", hex: "#059669" },
+  { name: "indigo", hex: "#4f46e5" },
+  { name: "sky", hex: "#0284c7" },
+  { name: "violet", hex: "#7c3aed" },
+  { name: "rose", hex: "#e11d48" },
+  { name: "amber", hex: "#d97706" },
+  { name: "slate", hex: "#334155" },
+] as const;
+
+export const DEFAULT_ACCENT = "#059669";
+
+export const LAYOUTS = [
+  { id: "mono", label: "mono", detail: "Developer style, monospace" },
+  { id: "minimal", label: "minimal", detail: "Clean sans-serif" },
+] as const;
