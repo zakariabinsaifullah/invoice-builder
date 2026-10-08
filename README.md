@@ -45,6 +45,20 @@ npx wrangler secret put GITHUB_CLIENT_ID     # and GITHUB_CLIENT_SECRET, GOOGLE_
 npm run deploy                        # build → apply remote D1 migrations → wrangler deploy
 ```
 
+### Automatic deploys (Workers Builds)
+
+The Worker is connected to this repo in **Cloudflare → Workers & Pages → invoice-builder → Settings → Builds**:
+
+| Setting | Value |
+|---|---|
+| Branch | `main` |
+| Build command | `npm run build` |
+| Deploy command | `npm run deploy:ci` (applies pending D1 migrations, then `wrangler deploy`) |
+| Root directory | `/` |
+
+Every push to `main` builds and deploys; GitHub shows the result as a check on the commit.
+If the deploy step fails on the D1 migration with an authorization error, give the build's API token **Account → D1 → Edit**.
+
 The custom domain (`invoicebuilder.tinytools.work`) is declared in `wrangler.jsonc`; Cloudflare creates the DNS record on deploy.
 
 > **Note:** if the project lives in an iCloud-synced folder (e.g. Desktop), iCloud can evict `node_modules` files and make builds hang. Keep it in a non-synced folder.
