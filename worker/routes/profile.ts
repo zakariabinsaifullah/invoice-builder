@@ -3,6 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { DEFAULT_PROFILE, formatInvoiceNumber, profileSchema, profileUpdateSchema, type ProfileResponse } from "../../shared/api";
 import { profile } from "../db/schema";
 import { getDb, readJson, type AppEnv, type Db } from "../lib";
+import { externalizeLogo } from "../logos";
 
 /** Loads the user's profile row, creating it with defaults on first use. */
 export async function loadProfile(db: Db, userId: string) {
@@ -28,6 +29,7 @@ export const profileRoutes = new Hono<AppEnv>()
     if (body instanceof Response) return body;
     const db = getDb(c.env);
     await loadProfile(db, c.var.user.id); // ensure row
+    body.profile.logo = await externalizeLogo(c.env, db, c.var.user.id, body.profile.logo);
     await db
       .update(profile)
       .set({

@@ -1,5 +1,6 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { InvoiceRecord, InvoiceStatus, InvoiceSummary, InvoiceWrite, ProfileResponse } from "@shared/api";
+import type { ClientSummary, InvoiceRecord, InvoiceStatus, InvoiceSummary, InvoiceWrite, ProfileResponse } from "@shared/api";
+import type { Party } from "@shared/invoice";
 import type { z } from "zod";
 import type { profileUpdateSchema } from "@shared/api";
 import type {
@@ -77,6 +78,7 @@ export function useSaveInvoice() {
       qc.setQueryData(keys.invoice(rec.id), rec);
       qc.invalidateQueries({ queryKey: keys.invoices() });
       qc.invalidateQueries({ queryKey: keys.profile }); // counter may have advanced
+      qc.invalidateQueries({ queryKey: clientsKey }); // bill-to may have become a saved client
     },
   });
 }
@@ -151,3 +153,26 @@ export const useDeleteTemplate = () => useTemplateMutation((id: string) => api<v
 
 export const useUseTemplate = () =>
   useTemplateMutation((id: string) => api<TemplateRecord>(`/templates/${id}/use`, { method: "POST" }));
+
+// ── clients ──
+const clientsKey = ["clients"] as const;
+
+export function useClients() {
+  return useQuery({
+    queryKey: clientsKey,
+    queryFn: () => api<{ clients: ClientSummary[] }>("/clients").then((r) => r.clients),
+    enabled: useSignedIn(),
+  });
+}
+
+function useClientMutation<V, R>(fn: (v: V) => Promise<R>) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: fn, onSuccess: () => qc.invalidateQueries({ queryKey: clientsKey }) });
+}
+
+export const useSaveClient = () =>
+  useClientMutation(({ id, ...party }: Party & { id?: string }) =>
+    id ? api<ClientSummary>(`/clients/${id}`, { method: "PUT", json: party }) : api<ClientSummary>("/clients", { method: "POST", json: party }),
+  );
+
+export const useDeleteClient = () => useClientMutation((id: string) => api<void>(`/clients/${id}`, { method: "DELETE" }));

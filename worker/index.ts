@@ -5,6 +5,10 @@ import type { AppEnv } from "./lib";
 import { invoiceRoutes } from "./routes/invoices";
 import { profileRoutes } from "./routes/profile";
 import { templateRoutes } from "./routes/templates";
+import { clientRoutes } from "./routes/clients";
+import { exportRoute } from "./routes/export";
+import { LOGO_KEY, readLogo } from "./logos";
+import { getDb } from "./lib";
 
 const app = new Hono<AppEnv>().basePath("/api");
 
@@ -31,9 +35,26 @@ app.get("/me", requireUser, (c) => {
 app.use("/profile/*", requireUser);
 app.use("/invoices/*", requireUser);
 app.use("/templates/*", requireUser);
+app.use("/clients/*", requireUser);
+app.use("/export", requireUser);
 app.route("/profile", profileRoutes);
 app.route("/invoices", invoiceRoutes);
 app.route("/templates", templateRoutes);
+app.route("/clients", clientRoutes);
+app.route("/export", exportRoute);
+
+// Stored logos are public by unguessable, content-addressed key (they're printed on invoices anyway).
+app.get("/logos/:user/:file", async (c) => {
+  const key = `${c.req.param("user")}/${c.req.param("file")}`;
+  if (!LOGO_KEY.test(key)) return c.json({ error: "not_found" }, 404);
+  const logo = await readLogo(c.env, getDb(c.env), key);
+  if (!logo) return c.json({ error: "not_found" }, 404);
+  return c.body(logo.body as ArrayBuffer, 200, {
+    "content-type": logo.contentType,
+    "cache-control": "public, max-age=31536000, immutable",
+    "x-content-type-options": "nosniff",
+  });
+});
 
 app.notFound((c) => c.json({ error: "not_found" }, 404));
 

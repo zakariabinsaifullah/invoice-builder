@@ -13,6 +13,8 @@ import {
 import { computeTotals } from "../../shared/money";
 import { invoice, profile } from "../db/schema";
 import { chunk, getDb, isUniqueViolation, readJson, type AppEnv, type Db } from "../lib";
+import { externalizeLogo } from "../logos";
+import { rememberClient } from "./clients";
 import { loadProfile } from "./profile";
 
 type Row = typeof invoice.$inferSelect;
@@ -126,6 +128,7 @@ export const invoiceRoutes = new Hono<AppEnv>()
     if (body instanceof Response) return body;
     const db = getDb(c.env);
     const userId = c.var.user.id;
+    body.data.style.logo = await externalizeLogo(c.env, db, userId, body.data.style.logo);
     const cols = columns(body);
     if (!cols.number) return c.json({ error: "number_required" }, 400);
 
@@ -140,6 +143,7 @@ export const invoiceRoutes = new Hono<AppEnv>()
       if (isUniqueViolation(err)) return numberTaken(c, db, userId);
       throw err;
     }
+    await rememberClient(db, userId, body.data.to);
     const row = (await db.select().from(invoice).where(eq(invoice.id, id)).get())!;
     return c.json(record(row), 201);
   })
@@ -150,6 +154,7 @@ export const invoiceRoutes = new Hono<AppEnv>()
     const db = getDb(c.env);
     const userId = c.var.user.id;
     const id = c.req.param("id");
+    body.data.style.logo = await externalizeLogo(c.env, db, userId, body.data.style.logo);
     const cols = columns(body);
     if (!cols.number) return c.json({ error: "number_required" }, 400);
 
@@ -164,6 +169,7 @@ export const invoiceRoutes = new Hono<AppEnv>()
       throw err;
     }
     const row = await db.select().from(invoice).where(where).get();
+    if (row) await rememberClient(db, userId, body.data.to);
     return row ? c.json(record(row)) : c.json({ error: "not_found" }, 404);
   })
 

@@ -97,12 +97,13 @@ export function EditorPage() {
     if (saveMutation.isPending) return;
     const s = useEditor.getState();
     try {
+      const sent = s.invoice;
       const rec = await saveMutation.mutateAsync({
         id: s.savedId,
         // Status is only changed through the status control (PATCH), never by saving content.
-        body: { data: s.invoice, templateId: s.templateId },
+        body: { data: sent, templateId: s.templateId },
       });
-      useEditor.getState().markSaved(rec);
+      useEditor.getState().markSaved(rec, sent);
       toast.success(`Saved ${rec.number}`);
       if (!id) navigate(`/invoices/${rec.id}`, { replace: true });
     } catch (err) {

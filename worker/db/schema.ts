@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { blob, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const timestamps = {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
@@ -141,4 +141,19 @@ export const template = sqliteTable(
     ...timestamps,
   },
   (t) => [index("template_user_idx").on(t.userId, t.pinned, t.lastUsedAt)],
+);
+
+/** Uploaded images (logos), content-addressed: key = "<userId>/<sha256>.<ext>". Used when no R2 bucket is bound. */
+export const asset = sqliteTable(
+  "asset",
+  {
+    key: text("key").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    contentType: text("content_type").notNull(),
+    data: blob("data", { mode: "buffer" }).notNull(),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [index("asset_user_idx").on(t.userId)],
 );

@@ -6,6 +6,7 @@ import { RequireAuth } from "@/features/auth/require-auth";
 import { InvoicesPage } from "@/features/invoices/invoices-page";
 import { SettingsPage } from "@/features/settings/settings-page";
 import { TemplatesPage } from "@/features/templates/templates-page";
+import { ClientsPage } from "@/features/clients/clients-page";
 
 export const router = createBrowserRouter([
   {
@@ -40,7 +41,7 @@ export const router = createBrowserRouter([
         path: "clients",
         element: (
           <RequireAuth title="clients" reason="keep a list of saved clients">
-            <PlaceholderPage title="clients" note="Saved clients for one-click billing." />
+            <ClientsPage />
           </RequireAuth>
         ),
       },

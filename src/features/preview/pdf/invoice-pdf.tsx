@@ -47,6 +47,9 @@ function fontStack(invoice: InvoiceData): string[] {
   return ["JetBrains Mono", ...FALLBACKS.filter((f) => f.test.test(text)).map((f) => f.family)];
 }
 
+/** Stored logos are same-origin paths; the PDF renderer fetches with an absolute URL. */
+const absoluteUrl = (src: string) => (src.startsWith("/") && typeof location !== "undefined" ? location.origin + src : src);
+
 const c = {
   s900: "#1c1917",
   s800: "#292524",
@@ -147,7 +150,7 @@ export function InvoicePdf({ invoice }: { invoice: InvoiceData }) {
         <View style={s.body}>
         <View style={s.header}>
           <View>
-            {invoice.style.logo ? <Image src={invoice.style.logo} style={s.logo} /> : null}
+            {invoice.style.logo ? <Image src={absoluteUrl(invoice.style.logo)} style={s.logo} /> : null}
             <Text style={s.title}>
               INVOICE<Text style={{ color: c.accent }}>_</Text>
             </Text>

@@ -14,6 +14,7 @@ import {
 import type { InvoiceData } from "../../shared/invoice";
 import { invoice, template } from "../db/schema";
 import { getDb, readJson, type AppEnv, type Db } from "../lib";
+import { externalizeLogo } from "../logos";
 
 type Row = typeof template.$inferSelect;
 
@@ -66,6 +67,7 @@ export const templateRoutes = new Hono<AppEnv>()
     if (body instanceof Response) return body;
     const db = getDb(c.env);
     if (!(await roomFor(db, c.var.user.id, 1))) return c.json(tooMany, 409);
+    body.data.logo = await externalizeLogo(c.env, db, c.var.user.id, body.data.logo);
     const [row] = await db
       .insert(template)
       .values({
@@ -93,8 +95,9 @@ export const templateRoutes = new Hono<AppEnv>()
     if (!invoices.length) return c.json({ error: "not_found" }, 404);
     if (!(await roomFor(db, userId, invoices.length))) return c.json(tooMany, 409);
 
-    const values = invoices.map((inv) => {
+    const values = await Promise.all(invoices.map(async (inv) => {
       const data = JSON.parse(inv.dataJson) as InvoiceData;
+      data.style.logo = await externalizeLogo(c.env, db, userId, data.style.logo); // older invoices may embed it
       return {
         id: crypto.randomUUID(),
         userId,
@@ -102,7 +105,7 @@ export const templateRoutes = new Hono<AppEnv>()
         tagsJson: JSON.stringify(body.tags),
         dataJson: JSON.stringify(extractTemplate(data, body.parts)),
       };
-    });
+    }));
     // One statement per row (D1's 100-parameter cap), all in one transaction.
     const [first, ...rest] = values.map((v) => db.insert(template).values(v).returning());
     const results = await db.batch([first, ...rest]);
@@ -112,7 +115,9 @@ export const templateRoutes = new Hono<AppEnv>()
   .patch("/:id", async (c) => {
     const body = await readJson(c, templateUpdateSchema);
     if (body instanceof Response) return body;
-    const [row] = await getDb(c.env)
+    const db = getDb(c.env);
+    if (body.data) body.data.logo = await externalizeLogo(c.env, db, c.var.user.id, body.data.logo);
+    const [row] = await db
       .update(template)
       .set({
         ...(body.name !== undefined && { name: body.name }),

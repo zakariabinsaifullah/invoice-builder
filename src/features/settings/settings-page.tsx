@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Download, Loader2, Save } from "lucide-react";
 import { CURRENCIES, PAYMENT_TERMS } from "@shared/constants";
 import { formatInvoiceNumber, type Profile } from "@shared/api";
 import { LogoInput } from "@/components/logo-input";
@@ -157,6 +157,17 @@ export function SettingsPage() {
             </div>
             <div className="mt-4 rounded-lg border border-border bg-bg px-3 py-2.5 font-mono text-xs">
               <span className="text-muted">next invoice →</span> <span className="text-accent">{formatInvoiceNumber(form, nextNumber)}</span>
+            </div>
+          </Card>
+        </Section>
+
+        <Section label="your_data" hint="Download everything — profile, clients, invoices and templates — as one JSON file.">
+          <Card label="export">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted">A full backup you can keep or move elsewhere.</p>
+              <a href="/api/export" download className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium hover:border-border-strong hover:bg-surface-2">
+                <Download className="size-4" /> export JSON
+              </a>
             </div>
           </Card>
         </Section>

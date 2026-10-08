@@ -1,5 +1,6 @@
 import type { Party } from "@shared/invoice";
 import { LogoInput } from "@/components/logo-input";
+import { ClientNameInput } from "@/features/clients/client-name-input";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Card } from "./card";
 import { useEditor } from "./store";
@@ -10,7 +11,11 @@ function PartyFields({ side, party }: { side: "from" | "to"; party: Party }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <Field label="name" className="col-span-2">
-        <Input value={party.name} onChange={on("name")} placeholder={side === "from" ? "Your business or full name" : "Client or company"} />
+        {side === "to" ? (
+          <ClientNameInput value={party.name} onChange={(name) => setParty("to", { name })} onPick={(p) => setParty("to", p)} />
+        ) : (
+          <Input value={party.name} onChange={on("name")} placeholder="Your business or full name" />
+        )}
       </Field>
       <Field label="email">
         <Input type="email" value={party.email} onChange={on("email")} placeholder="hello@example.com" />

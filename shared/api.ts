@@ -79,3 +79,16 @@ export type InvoiceSummary = {
 export type InvoiceRecord = InvoiceSummary & { data: z.infer<typeof invoiceSchema>; templateId: string | null };
 
 export type ApiError = { error: string; message?: string; issues?: unknown };
+
+// ── Clients ───────────────────────────────────────────────────────────────
+
+export type ClientSummary = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  taxId: string;
+  invoiceCount: number;
+  lastInvoiceDate: string | null;
+};

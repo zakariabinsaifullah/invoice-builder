@@ -73,10 +73,10 @@ type EditorState = {
   duplicateItem: (id: string) => void;
   moveItem: (from: number, to: number) => void;
   reset: (base?: InvoiceData) => void;
-  /** Start a new (unsaved) invoice from a template. */
-  startFromTemplate: (inv: InvoiceData, templateId: string) => void;
+  /** Start a new (unsaved), already-filled invoice — from a template or for a client. */
+  startFromTemplate: (inv: InvoiceData, templateId: string | null) => void;
   load: (rec: InvoiceRecord) => void;
-  markSaved: (rec: InvoiceRecord) => void;
+  markSaved: (rec: InvoiceRecord, sent: InvoiceData) => void;
   setStatus: (status: InvoiceStatus) => void;
 };
 
@@ -141,8 +141,16 @@ export const useEditor = create<EditorState>()(
             savedAt: rec.updatedAt,
             fresh: false,
           }),
-        // Keeps the working copy as-is (the user may have typed while the request was in flight).
-        markSaved: (rec) => set({ savedId: rec.id, status: rec.status, savedSnapshot: snapshot(rec.data), savedAt: rec.updatedAt }),
+        // Adopt the server's normalized copy (e.g. logo data URL → stored path) unless the user
+        // kept typing while the request was in flight — then keep their edits (they show as unsaved).
+        markSaved: (rec, sent) =>
+          set((s) => ({
+            savedId: rec.id,
+            status: rec.status,
+            savedSnapshot: snapshot(rec.data),
+            savedAt: rec.updatedAt,
+            ...(snapshot(s.invoice) === snapshot(sent) && { invoice: rec.data }),
+          })),
         setStatus: (status) => set({ status }),
       };
     },

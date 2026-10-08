@@ -23,11 +23,14 @@ export const discountSchema = z.object({
 
 export const invoiceStyleSchema = z.object({
   layout: z.enum(["mono", "minimal"]).default("mono"),
-  /** PNG data URL (rasterized client-side). */
+  /**
+   * Either a PNG/JPEG data URL (fresh upload or guest draft) or a stored-logo path
+   * (`/api/logos/<user>/<sha256>.png`) — the server swaps data URLs for paths on save.
+   */
   logo: z
     .string()
     .max(700_000)
-    .regex(/^data:image\/(png|jpeg);base64,/)
+    .regex(/^(data:image\/(png|jpeg);base64,|\/api\/logos\/[\w-]+\/[a-f0-9]{64}\.(png|jpeg)$)/)
     .nullable()
     .default(null),
 });
