@@ -14,6 +14,7 @@ export function blankInvoice(): InvoiceData {
   const issue = today();
   return {
     number: "INV-0001",
+    project: "",
     issueDate: issue,
     termsDays: 14,
     dueDate: addDays(issue, 14),

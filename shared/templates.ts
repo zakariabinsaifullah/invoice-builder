@@ -10,6 +10,7 @@ export const templateDataSchema = z.object({
   from: partySchema.optional(),
   logo: invoiceSchema.shape.style.shape.logo.optional(),
   to: partySchema.optional(),
+  project: z.string().max(200).optional(),
   items: z.array(lineItemSchema).max(200).optional(),
   taxRate: z.number().min(0).max(100).optional(),
   discount: discountSchema.optional(),

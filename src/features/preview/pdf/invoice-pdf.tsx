@@ -174,6 +174,12 @@ function MonoBody({ invoice, t, money, items, sections, accent }: BodyProps) {
       <View style={s.parties}>
         <PartyBlock label="from" party={invoice.from} />
         <PartyBlock label="bill_to" party={invoice.to} />
+        {invoice.project?.trim() ? (
+          <View style={s.party}>
+            <Text style={s.label}>// project</Text>
+            <Text style={s.partyName}>{invoice.project.trim()}</Text>
+          </View>
+        ) : null}
       </View>
 
       {/* Header is fixed inside the table view, so it repeats only on pages the item rows reach. */}
@@ -294,6 +300,12 @@ function MinimalBody({ invoice, t, money, items, sections, accent }: BodyProps) 
             </View>
           </View>
         ))}
+        {invoice.project?.trim() ? (
+          <View style={s.party}>
+            <Text style={m.label}>Project</Text>
+            <Text style={m.partyName}>{invoice.project.trim()}</Text>
+          </View>
+        ) : null}
       </View>
 
       <View>

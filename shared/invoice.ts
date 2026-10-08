@@ -42,6 +42,8 @@ export const invoiceStyleSchema = z.object({
 
 export const invoiceSchema = z.object({
   number: z.string().max(60),
+  /** Optional project / engagement name shown on the invoice. */
+  project: z.string().max(200).optional(),
   issueDate: z.string(), // YYYY-MM-DD
   /** Days until due. null = custom due date. */
   termsDays: z.number().int().min(0).max(365).nullable(),

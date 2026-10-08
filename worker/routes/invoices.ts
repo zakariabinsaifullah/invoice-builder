@@ -27,6 +27,7 @@ const summary = (r: Row): InvoiceSummary => ({
   dueDate: r.dueDate,
   currency: r.currency,
   clientName: r.clientName,
+  project: (JSON.parse(r.dataJson) as { project?: string }).project ?? "",
   totalMinor: r.totalMinor,
   createdAt: r.createdAt.getTime(),
   updatedAt: r.updatedAt.getTime(),
@@ -44,7 +45,7 @@ function columns(body: InvoiceWrite) {
     currency: d.currency,
     clientName: d.to.name.trim(),
     totalMinor: computeTotals(d).total,
-    dataJson: JSON.stringify({ ...d, number: d.number.trim() }),
+    dataJson: JSON.stringify({ ...d, number: d.number.trim(), project: d.project?.trim() ?? "" }),
     ...(body.status && { status: body.status }),
     ...(body.templateId !== undefined && { templateId: body.templateId }),
   };
@@ -92,7 +93,9 @@ export const invoiceRoutes = new Hono<AppEnv>()
         and(
           eq(invoice.userId, userId),
           status ? eq(invoice.status, status) : undefined,
-          term ? or(like(invoice.number, term), like(invoice.clientName, term)) : undefined,
+          term
+            ? or(like(invoice.number, term), like(invoice.clientName, term), like(sql`json_extract(${invoice.dataJson}, '$.project')`, term))
+            : undefined,
         ),
       )
       .orderBy(desc(invoice.updatedAt))

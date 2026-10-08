@@ -7,7 +7,7 @@ export type TemplatePart = (typeof TEMPLATE_PARTS)[number];
 
 export const TEMPLATE_PART_INFO: Record<TemplatePart, { label: string; detail: string }> = {
   business: { label: "your business", detail: "From details & logo" },
-  client: { label: "client", detail: "Bill-to details" },
+  client: { label: "client & project", detail: "Bill-to details, project name" },
   items: { label: "line items", detail: "Descriptions, quantities, rates" },
   adjustments: { label: "tax & discount", detail: "Tax rate, discount, shipping" },
   notes: { label: "notes & terms", detail: "Payment info, notes, terms" },
@@ -22,7 +22,7 @@ export function extractTemplate(inv: InvoiceData, parts: readonly TemplatePart[]
   return {
     parts: TEMPLATE_PARTS.filter(has),
     ...(has("business") && { from: inv.from, logo: inv.style.logo }),
-    ...(has("client") && { to: inv.to }),
+    ...(has("client") && { to: inv.to, ...(inv.project?.trim() && { project: inv.project.trim() }) }),
     ...(has("items") && { items: inv.items.filter((i) => i.description.trim() || i.rate > 0) }),
     ...(has("adjustments") && { taxRate: inv.taxRate, discount: inv.discount, shipping: inv.shipping }),
     ...(has("notes") && { notes: inv.notes, paymentInfo: inv.paymentInfo, terms: inv.terms }),
@@ -45,6 +45,7 @@ export function applyTemplate(base: InvoiceData, t: TemplateData, newId: () => s
   if (t.from) inv.from = { ...t.from };
   if (t.logo !== undefined) inv.style.logo = t.logo;
   if (t.to) inv.to = { ...t.to };
+  if (t.project !== undefined) inv.project = t.project;
   if (t.items?.length) inv.items = t.items.map((i) => ({ ...i, id: newId() }));
   if (t.taxRate !== undefined) inv.taxRate = t.taxRate;
   if (t.discount) inv.discount = { ...t.discount };

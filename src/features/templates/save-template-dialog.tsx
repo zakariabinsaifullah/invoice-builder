@@ -61,7 +61,7 @@ export function SaveTemplateDialog() {
     const items = invoice.items.filter((i) => i.description.trim() || i.rate > 0);
     return {
       business: invoice.from.name || "—",
-      client: invoice.to.name || "—",
+      client: [invoice.to.name, invoice.project].filter(Boolean).join(" · ") || "—",
       items: items.length ? `${items.length} item${items.length > 1 ? "s" : ""}` : "none",
       adjustments: [invoice.taxRate && `tax ${invoice.taxRate}%`, invoice.discount.value && "discount", invoice.shipping && "shipping"].filter(Boolean).join(", ") || "none",
       notes: [invoice.paymentInfo && "payment", invoice.notes && "notes", invoice.terms && "terms"].filter(Boolean).join(", ") || "empty",

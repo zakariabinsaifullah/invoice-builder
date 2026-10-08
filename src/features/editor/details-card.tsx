@@ -37,6 +37,9 @@ export function DetailsCard() {
             {!knownTerm && inv.termsDays !== null && <option value={inv.termsDays}>Net {inv.termsDays}</option>}
           </Select>
         </Field>
+        <Field label="project" hint="optional" className="col-span-2 lg:col-span-1 lg:order-last">
+          <Input value={inv.project ?? ""} onChange={(e) => set("project", e.target.value)} placeholder="e.g. Website redesign" maxLength={200} />
+        </Field>
         <Field label="due_date">
           <Input
             type="date"

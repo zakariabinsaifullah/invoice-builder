@@ -172,7 +172,7 @@ export function InvoicesPage() {
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search number or client…" className="pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search number, client or project…" className="pl-9" />
         </div>
         <div className="flex rounded-lg border border-border bg-surface p-0.5 font-mono text-xs">
           {FILTERS.map((f) => (
@@ -250,7 +250,10 @@ export function InvoicesPage() {
                     </Link>
                     <div className="font-mono text-[11px] text-muted">edited {timeAgo(inv.updatedAt)}</div>
                   </td>
-                  <td className="max-w-48 truncate px-4 py-3">{inv.clientName || <span className="text-muted">—</span>}</td>
+                  <td className="max-w-48 px-4 py-3">
+                    <div className="truncate">{inv.clientName || <span className="text-muted">—</span>}</div>
+                    {inv.project && <div className="truncate font-mono text-[11px] text-muted">{inv.project}</div>}
+                  </td>
                   <td className="hidden px-4 py-3 font-mono text-xs text-muted md:table-cell">{formatDate(inv.issueDate)}</td>
                   <td className="hidden px-4 py-3 font-mono text-xs text-muted md:table-cell">{formatDate(inv.dueDate)}</td>
                   <td className="px-4 py-3 text-right font-mono tabular">{formatMinor(inv.totalMinor, inv.currency)}</td>

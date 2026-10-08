@@ -142,7 +142,7 @@ export function CommandPalette() {
         group: "open invoice",
         label: `${i.number}${i.clientName ? ` · ${i.clientName}` : ""}`,
         hint: formatMinor(i.totalMinor, i.currency),
-        keywords: "invoice open",
+        keywords: `invoice open ${i.project}`,
         icon: ic(Files),
         run: go(`/invoices/${i.id}`),
       });

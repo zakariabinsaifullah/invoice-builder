@@ -64,6 +64,7 @@ export type InvoiceSummary = {
   dueDate: string;
   currency: string;
   clientName: string;
+  project: string;
   totalMinor: number;
   createdAt: number;
   updatedAt: number;

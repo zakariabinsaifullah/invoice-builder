@@ -91,9 +91,15 @@ function MonoDocument({ invoice, t, money, rows, className, style }: DocProps & 
         </dl>
       </header>
 
-      <div className="mt-10 grid grid-cols-2 gap-10 border-t border-stone-200 pt-6">
+      <div className={cn("mt-10 grid gap-10 border-t border-stone-200 pt-6", invoice.project?.trim() ? "grid-cols-3" : "grid-cols-2")}>
         <MonoParty label="from" party={invoice.from} fallback="Your business" />
         <MonoParty label="bill_to" party={invoice.to} fallback="Client name" />
+        {invoice.project?.trim() && (
+          <div className="min-w-0">
+            <div className="text-[11px] text-stone-400">// project</div>
+            <div className="mt-1.5 break-words text-[13px] font-semibold text-stone-900">{invoice.project}</div>
+          </div>
+        )}
       </div>
 
       <table className="mt-10 w-full table-fixed tabular">
@@ -214,9 +220,15 @@ function MinimalDocument({ invoice, t, money, rows, className, style }: DocProps
           ))}
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-10">
+        <div className={cn("mt-10 grid gap-10", invoice.project?.trim() ? "grid-cols-3" : "grid-cols-2")}>
           <MinimalParty label="From" party={invoice.from} fallback="Your business" />
           <MinimalParty label="Bill to" party={invoice.to} fallback="Client name" />
+          {invoice.project?.trim() && (
+            <div className="min-w-0">
+              <div className={label}>Project</div>
+              <div className="mt-2 break-words text-[14px] font-semibold text-stone-900">{invoice.project}</div>
+            </div>
+          )}
         </div>
 
         <table className="mt-10 w-full table-fixed tabular">
