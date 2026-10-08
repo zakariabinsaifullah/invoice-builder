@@ -3,6 +3,8 @@ import { AppShell } from "@/app/shell";
 import { EditorPage } from "@/app/pages/editor";
 import { PlaceholderPage } from "@/app/pages/placeholder";
 import { RequireAuth } from "@/features/auth/require-auth";
+import { InvoicesPage } from "@/features/invoices/invoices-page";
+import { SettingsPage } from "@/features/settings/settings-page";
 
 export const router = createBrowserRouter([
   {
@@ -13,7 +15,15 @@ export const router = createBrowserRouter([
         path: "invoices",
         element: (
           <RequireAuth title="invoices" reason="save and manage your invoices">
-            <PlaceholderPage title="invoices" note="Saved invoices with status, search and bulk actions." />
+            <InvoicesPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "invoices/:id",
+        element: (
+          <RequireAuth title="invoices" reason="open saved invoices">
+            <EditorPage />
           </RequireAuth>
         ),
       },
@@ -37,7 +47,7 @@ export const router = createBrowserRouter([
         path: "settings",
         element: (
           <RequireAuth title="settings" reason="set your business profile and defaults">
-            <PlaceholderPage title="settings" note="Business profile, defaults and numbering." />
+            <SettingsPage />
           </RequireAuth>
         ),
       },

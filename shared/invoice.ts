@@ -23,7 +23,13 @@ export const discountSchema = z.object({
 
 export const invoiceStyleSchema = z.object({
   layout: z.enum(["mono", "minimal"]).default("mono"),
-  logo: z.string().nullable().default(null),
+  /** PNG data URL (rasterized client-side). */
+  logo: z
+    .string()
+    .max(700_000)
+    .regex(/^data:image\/(png|jpeg);base64,/)
+    .nullable()
+    .default(null),
 });
 
 export const invoiceSchema = z.object({

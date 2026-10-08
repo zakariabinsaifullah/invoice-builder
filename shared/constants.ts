@@ -3,6 +3,7 @@
 export const PAYMENT_TERMS: { label: string; days: number | null }[] = [
   { label: "Due on receipt", days: 0 },
   { label: "Net 7", days: 7 },
+  { label: "Net 14", days: 14 },
   { label: "Net 15", days: 15 },
   { label: "Net 30", days: 30 },
   { label: "Net 60", days: 60 },

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useNavigate } from "react-router";
 import { FilePlus2, Files, LayoutTemplate, Lock, LogOut, Menu, Moon, Settings, Sun, Users, X } from "lucide-react";
+import { Toaster } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { SignInDialog, useSignInDialog } from "@/features/auth/sign-in-dialog";
+import { useEditor } from "@/features/editor/store";
 import { signOut, useSession } from "@/lib/auth-client";
+import { queryClient } from "@/lib/queries";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +54,15 @@ function ApiStatus() {
 function AccountCard() {
   const { data, isPending } = useSession();
   const show = useSignInDialog((s) => s.show);
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    await signOut();
+    // Don't leave the account's data on screen or in cache.
+    queryClient.clear();
+    if (useEditor.getState().savedId) useEditor.getState().reset();
+    navigate("/");
+  };
 
   if (isPending) return <div className="h-[118px] animate-pulse rounded-lg border border-border bg-surface" />;
 
@@ -83,7 +95,7 @@ function AccountCard() {
         variant="ghost"
         size="icon"
         className="size-8 shrink-0"
-        onClick={() => signOut()}
+        onClick={logout}
         aria-label="Sign out"
         title="Sign out"
       >
@@ -169,6 +181,7 @@ export function AppShell() {
         <Outlet />
       </main>
       <SignInDialog />
+      <Toaster />
     </div>
   );
 }

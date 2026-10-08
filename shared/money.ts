@@ -1,4 +1,4 @@
-import type { InvoiceData, LineItem } from "@shared/invoice";
+import type { InvoiceData, LineItem } from "./invoice";
 
 /** Number of minor units for a currency (USD → 2, JPY → 0). */
 export function currencyDigits(currency: string): number {

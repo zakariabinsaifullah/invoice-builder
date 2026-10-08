@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
-import { configuredProviders, createAuth, type SessionUser } from "./auth";
-
-type AppEnv = { Bindings: Env; Variables: { user: SessionUser } };
+import { configuredProviders, createAuth } from "./auth";
+import type { AppEnv } from "./lib";
+import { invoiceRoutes } from "./routes/invoices";
+import { profileRoutes } from "./routes/profile";
 
 const app = new Hono<AppEnv>().basePath("/api");
 
@@ -25,6 +26,11 @@ app.get("/me", requireUser, (c) => {
   const { id, name, email, image } = c.var.user;
   return c.json({ id, name, email, image });
 });
+
+app.use("/profile/*", requireUser);
+app.use("/invoices/*", requireUser);
+app.route("/profile", profileRoutes);
+app.route("/invoices", invoiceRoutes);
 
 app.notFound((c) => c.json({ error: "not_found" }, 404));
 

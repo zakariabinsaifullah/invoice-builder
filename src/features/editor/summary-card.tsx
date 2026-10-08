@@ -1,5 +1,5 @@
 import { Field, NumberInput, Textarea } from "@/components/ui/input";
-import { computeTotals, formatMinor } from "@/lib/money";
+import { computeTotals, formatMinor } from "@shared/money";
 import { cn } from "@/lib/utils";
 import { Card } from "./card";
 import { useEditor } from "./store";

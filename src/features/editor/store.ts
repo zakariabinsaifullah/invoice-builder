@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { InvoiceRecord, InvoiceStatus, ProfileResponse } from "@shared/api";
 import type { InvoiceData, LineItem, Party } from "@shared/invoice";
 import { addDays, today } from "@/lib/dates";
 
@@ -30,8 +31,37 @@ export function blankInvoice(): InvoiceData {
   };
 }
 
+/** A new invoice pre-filled from the signed-in user's profile and numbering. */
+export function invoiceFromProfile({ profile: p, nextInvoiceNumber }: ProfileResponse): InvoiceData {
+  const base = blankInvoice();
+  return {
+    ...base,
+    number: nextInvoiceNumber,
+    termsDays: p.termsDays,
+    dueDate: addDays(base.issueDate, p.termsDays),
+    currency: p.currency,
+    from: { ...p.business },
+    taxRate: p.taxRate,
+    notes: p.notes,
+    paymentInfo: p.paymentInfo,
+    terms: p.terms,
+    style: { ...base.style, logo: p.logo },
+  };
+}
+
+export const snapshot = (inv: InvoiceData) => JSON.stringify(inv);
+
 type EditorState = {
   invoice: InvoiceData;
+  /** Server id once saved; null for an unsaved draft. */
+  savedId: string | null;
+  status: InvoiceStatus;
+  templateId: string | null;
+  /** JSON of the invoice as last saved — compare to detect unsaved changes. */
+  savedSnapshot: string | null;
+  savedAt: number | null;
+  /** Untouched since reset: safe to replace with profile defaults. */
+  fresh: boolean;
   set: <K extends keyof InvoiceData>(key: K, value: InvoiceData[K]) => void;
   setParty: (side: "from" | "to", patch: Partial<Party>) => void;
   setIssueDate: (date: string) => void;
@@ -42,15 +72,22 @@ type EditorState = {
   removeItem: (id: string) => void;
   duplicateItem: (id: string) => void;
   moveItem: (from: number, to: number) => void;
-  reset: () => void;
+  reset: (base?: InvoiceData) => void;
+  load: (rec: InvoiceRecord) => void;
+  markSaved: (rec: InvoiceRecord) => void;
+  setStatus: (status: InvoiceStatus) => void;
 };
 
 export const useEditor = create<EditorState>()(
   persist(
     (set) => {
-      const patch = (fn: (inv: InvoiceData) => Partial<InvoiceData>) => set((s) => ({ invoice: { ...s.invoice, ...fn(s.invoice) } }));
+      const patch = (fn: (inv: InvoiceData) => Partial<InvoiceData>) =>
+        set((s) => ({ invoice: { ...s.invoice, ...fn(s.invoice) }, fresh: false }));
+      const unsaved = { savedId: null, status: "draft" as const, templateId: null, savedSnapshot: null, savedAt: null };
       return {
         invoice: blankInvoice(),
+        ...unsaved,
+        fresh: true,
         set: (key, value) => patch(() => ({ [key]: value })),
         setParty: (side, p) => patch((inv) => ({ [side]: { ...inv[side], ...p } })),
         setIssueDate: (issueDate) =>
@@ -90,13 +127,28 @@ export const useEditor = create<EditorState>()(
             items.splice(to, 0, moved);
             return { items };
           }),
-        reset: () => set({ invoice: blankInvoice() }),
+        reset: (base) => set({ invoice: base ?? blankInvoice(), ...unsaved, fresh: true }),
+        load: (rec) =>
+          set({
+            invoice: rec.data,
+            savedId: rec.id,
+            status: rec.status,
+            templateId: rec.templateId,
+            savedSnapshot: snapshot(rec.data),
+            savedAt: rec.updatedAt,
+            fresh: false,
+          }),
+        // Keeps the working copy as-is (the user may have typed while the request was in flight).
+        markSaved: (rec) => set({ savedId: rec.id, status: rec.status, savedSnapshot: snapshot(rec.data), savedAt: rec.updatedAt }),
+        setStatus: (status) => set({ status }),
       };
     },
     {
       // Guests: keep the draft for this tab only (survives refresh, never leaves the browser).
       name: "ib:draft",
-      version: 1,
+      version: 2,
+      // v1 stored only the invoice; the rest falls back to defaults.
+      migrate: (old) => old as EditorState,
       storage: createJSONStorage(() => sessionStorage),
     },
   ),

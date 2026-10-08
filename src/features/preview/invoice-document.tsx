@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { InvoiceData, Party } from "@shared/invoice";
-import { computeTotals, formatMinor, lineAmountMinor } from "@/lib/money";
+import { computeTotals, formatMinor, lineAmountMinor } from "@shared/money";
 import { formatDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 

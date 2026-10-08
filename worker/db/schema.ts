@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const timestamps = {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
@@ -67,4 +67,78 @@ export const verification = sqliteTable(
     ...timestamps,
   },
   (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
+
+// ── App tables ─────────────────────────────────────────────────────────────
+
+/** One row per user: business profile, invoice defaults and numbering. */
+export const profile = sqliteTable("profile", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  /** JSON: Profile (see shared/api.ts) */
+  dataJson: text("data_json").notNull(),
+  nextNumber: integer("next_number").notNull().default(1),
+  ...timestamps,
+});
+
+export const client = sqliteTable(
+  "client",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    address: text("address").notNull().default(""),
+    taxId: text("tax_id").notNull().default(""),
+    ...timestamps,
+  },
+  (t) => [index("client_user_name_idx").on(t.userId, t.name)],
+);
+
+export const invoice = sqliteTable(
+  "invoice",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    number: text("number").notNull(),
+    status: text("status", { enum: ["draft", "sent", "paid"] }).notNull().default("draft"),
+    issueDate: text("issue_date").notNull(),
+    dueDate: text("due_date").notNull(),
+    currency: text("currency").notNull(),
+    clientName: text("client_name").notNull().default(""),
+    totalMinor: integer("total_minor").notNull().default(0),
+    /** JSON: InvoiceData */
+    dataJson: text("data_json").notNull(),
+    templateId: text("template_id"),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("invoice_user_number_uq").on(t.userId, t.number),
+    index("invoice_user_updated_idx").on(t.userId, t.updatedAt),
+  ],
+);
+
+export const template = sqliteTable(
+  "template",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tagsJson: text("tags_json").notNull().default("[]"),
+    pinned: integer("pinned", { mode: "boolean" }).notNull().default(false),
+    /** JSON: TemplateData (partial InvoiceData) */
+    dataJson: text("data_json").notNull(),
+    useCount: integer("use_count").notNull().default(0),
+    lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
+    ...timestamps,
+  },
+  (t) => [index("template_user_idx").on(t.userId, t.pinned, t.lastUsedAt)],
 );

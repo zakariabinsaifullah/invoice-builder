@@ -1,6 +1,6 @@
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { InvoiceData, Party } from "@shared/invoice";
-import { computeTotals, formatMinor, lineAmountMinor } from "@/lib/money";
+import { computeTotals, formatMinor, lineAmountMinor } from "@shared/money";
 import { formatDate } from "@/lib/dates";
 
 // Mirrors InvoiceDocument (HTML). Sizes are the HTML px values × 0.75 (A4: 794px ↔ 595pt).

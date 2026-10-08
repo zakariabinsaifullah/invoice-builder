@@ -3,7 +3,7 @@ import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, NumberInput } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { currencyDigits, formatMinor, lineAmountMinor } from "@/lib/money";
+import { currencyDigits, formatMinor, lineAmountMinor } from "@shared/money";
 import { cn } from "@/lib/utils";
 import { Card } from "./card";
 import { useEditor } from "./store";
