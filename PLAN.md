@@ -1,5 +1,8 @@
 # Invoice Builder — Build Plan
 
+> **Status (2026-10-08):** milestones 1–9 complete and live at https://invoicebuilder.tinytools.work.
+> Deviations: logos are stored content-addressed in D1 because R2 isn't enabled on the account (bind a `LOGOS` R2 bucket to switch); the D1 tables include an `asset` table for this.
+
 A fast, developer-styled invoice builder at **invoicebuilder.tinytools.work**.
 Anyone can create and download invoices; signed-in users can also save invoices, templates and clients to Cloudflare.
 
