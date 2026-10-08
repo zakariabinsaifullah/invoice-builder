@@ -73,6 +73,8 @@ type EditorState = {
   duplicateItem: (id: string) => void;
   moveItem: (from: number, to: number) => void;
   reset: (base?: InvoiceData) => void;
+  /** Start a new (unsaved) invoice from a template. */
+  startFromTemplate: (inv: InvoiceData, templateId: string) => void;
   load: (rec: InvoiceRecord) => void;
   markSaved: (rec: InvoiceRecord) => void;
   setStatus: (status: InvoiceStatus) => void;
@@ -128,6 +130,7 @@ export const useEditor = create<EditorState>()(
             return { items };
           }),
         reset: (base) => set({ invoice: base ?? blankInvoice(), ...unsaved, fresh: true }),
+        startFromTemplate: (inv, templateId) => set({ invoice: inv, ...unsaved, templateId, fresh: false }),
         load: (rec) =>
           set({
             invoice: rec.data,

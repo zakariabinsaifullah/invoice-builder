@@ -4,6 +4,7 @@ import { configuredProviders, createAuth } from "./auth";
 import type { AppEnv } from "./lib";
 import { invoiceRoutes } from "./routes/invoices";
 import { profileRoutes } from "./routes/profile";
+import { templateRoutes } from "./routes/templates";
 
 const app = new Hono<AppEnv>().basePath("/api");
 
@@ -29,8 +30,10 @@ app.get("/me", requireUser, (c) => {
 
 app.use("/profile/*", requireUser);
 app.use("/invoices/*", requireUser);
+app.use("/templates/*", requireUser);
 app.route("/profile", profileRoutes);
 app.route("/invoices", invoiceRoutes);
+app.route("/templates", templateRoutes);
 
 app.notFound((c) => c.json({ error: "not_found" }, 404));
 

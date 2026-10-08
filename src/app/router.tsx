@@ -5,6 +5,7 @@ import { PlaceholderPage } from "@/app/pages/placeholder";
 import { RequireAuth } from "@/features/auth/require-auth";
 import { InvoicesPage } from "@/features/invoices/invoices-page";
 import { SettingsPage } from "@/features/settings/settings-page";
+import { TemplatesPage } from "@/features/templates/templates-page";
 
 export const router = createBrowserRouter([
   {
@@ -31,7 +32,7 @@ export const router = createBrowserRouter([
         path: "templates",
         element: (
           <RequireAuth title="templates" reason="save templates and make quick invoices">
-            <PlaceholderPage title="templates" note="Reusable templates — save once, invoice in seconds." />
+            <TemplatesPage />
           </RequireAuth>
         ),
       },

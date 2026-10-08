@@ -32,3 +32,10 @@ export function isUniqueViolation(err: unknown): boolean {
   }
   return false;
 }
+
+/** D1 allows at most 100 bound parameters per statement; split long id lists. */
+export function chunk<T>(arr: T[], size = 90): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}

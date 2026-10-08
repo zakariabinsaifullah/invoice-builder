@@ -5,6 +5,7 @@ import { Toaster } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { SignInDialog, useSignInDialog } from "@/features/auth/sign-in-dialog";
 import { useEditor } from "@/features/editor/store";
+import { SaveTemplateDialog } from "@/features/templates/save-template-dialog";
 import { signOut, useSession } from "@/lib/auth-client";
 import { queryClient } from "@/lib/queries";
 import { useTheme } from "@/lib/theme";
@@ -181,6 +182,7 @@ export function AppShell() {
         <Outlet />
       </main>
       <SignInDialog />
+      <SaveTemplateDialog />
       <Toaster />
     </div>
   );

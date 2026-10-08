@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   formatInvoiceNumber,
@@ -12,7 +12,7 @@ import {
 } from "../../shared/api";
 import { computeTotals } from "../../shared/money";
 import { invoice, profile } from "../db/schema";
-import { getDb, isUniqueViolation, readJson, type AppEnv, type Db } from "../lib";
+import { chunk, getDb, isUniqueViolation, readJson, type AppEnv, type Db } from "../lib";
 import { loadProfile } from "./profile";
 
 type Row = typeof invoice.$inferSelect;
@@ -96,6 +96,20 @@ export const invoiceRoutes = new Hono<AppEnv>()
       .orderBy(desc(invoice.updatedAt))
       .limit(limit);
     return c.json({ invoices: rows.map(summary) });
+  })
+
+  .post("/bulk-delete", async (c) => {
+    const body = await readJson(c, z.object({ ids: z.array(z.string()).min(1).max(500) }));
+    if (body instanceof Response) return body;
+    const db = getDb(c.env);
+    const [first, ...rest] = chunk(body.ids).map((ids) =>
+      db
+        .delete(invoice)
+        .where(and(eq(invoice.userId, c.var.user.id), inArray(invoice.id, ids)))
+        .returning({ id: invoice.id }),
+    );
+    const results = await db.batch([first, ...rest]);
+    return c.json({ deleted: results.flat().map((r) => r.id) });
   })
 
   .get("/:id", async (c) => {

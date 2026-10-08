@@ -2,6 +2,17 @@ import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/re
 import type { InvoiceRecord, InvoiceStatus, InvoiceSummary, InvoiceWrite, ProfileResponse } from "@shared/api";
 import type { z } from "zod";
 import type { profileUpdateSchema } from "@shared/api";
+import type {
+  TemplateRecord,
+  TemplateSummary,
+  templateCreateSchema,
+  templatesFromInvoicesSchema,
+  templateUpdateSchema,
+} from "@shared/templates";
+
+type TemplateCreate = z.input<typeof templateCreateSchema>;
+type TemplateUpdate = z.input<typeof templateUpdateSchema>;
+type TemplatesFromInvoices = z.input<typeof templatesFromInvoicesSchema>;
 import { api, HttpError } from "./api";
 import { useSession } from "./auth-client";
 
@@ -92,3 +103,51 @@ export function useDeleteInvoice() {
     },
   });
 }
+
+export function useBulkDeleteInvoices() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api<{ deleted: string[] }>("/invoices/bulk-delete", { method: "POST", json: { ids } }),
+    onSuccess: ({ deleted }) => {
+      deleted.forEach((id) => qc.removeQueries({ queryKey: keys.invoice(id) }));
+      qc.invalidateQueries({ queryKey: keys.invoices() });
+    },
+  });
+}
+
+// ── templates ──
+const templatesKey = ["templates"] as const;
+
+export function useTemplates() {
+  return useQuery({
+    queryKey: templatesKey,
+    queryFn: () => api<{ templates: TemplateSummary[] }>("/templates").then((r) => r.templates),
+    enabled: useSignedIn(),
+  });
+}
+
+function useTemplateMutation<V, R>(fn: (v: V) => Promise<R>) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: fn, onSuccess: () => qc.invalidateQueries({ queryKey: templatesKey }) });
+}
+
+export const useCreateTemplate = () =>
+  useTemplateMutation((body: TemplateCreate) => api<TemplateRecord>("/templates", { method: "POST", json: body }));
+
+export const useTemplatesFromInvoices = () =>
+  useTemplateMutation((body: TemplatesFromInvoices) =>
+    api<{ templates: TemplateSummary[] }>("/templates/from-invoices", { method: "POST", json: body }),
+  );
+
+export const useUpdateTemplate = () =>
+  useTemplateMutation(({ id, ...body }: { id: string } & TemplateUpdate) =>
+    api<TemplateRecord>(`/templates/${id}`, { method: "PATCH", json: body }),
+  );
+
+export const useDuplicateTemplate = () =>
+  useTemplateMutation((id: string) => api<TemplateRecord>(`/templates/${id}/duplicate`, { method: "POST" }));
+
+export const useDeleteTemplate = () => useTemplateMutation((id: string) => api<void>(`/templates/${id}`, { method: "DELETE" }));
+
+export const useUseTemplate = () =>
+  useTemplateMutation((id: string) => api<TemplateRecord>(`/templates/${id}/use`, { method: "POST" }));

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router";
-import { Download, Eye, Loader2, Lock, PencilLine, Printer, RotateCcw, Save } from "lucide-react";
+import { Download, Eye, LayoutTemplate, Loader2, Lock, PencilLine, Printer, RotateCcw, Save } from "lucide-react";
 import type { InvoiceStatus } from "@shared/api";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -15,6 +15,8 @@ import { SummaryCard } from "@/features/editor/summary-card";
 import { displayStatus, StatusBadge } from "@/features/invoices/status";
 import { InvoiceDocument } from "@/features/preview/invoice-document";
 import { ScaledPreview } from "@/features/preview/scaled-preview";
+import { QuickStart } from "@/features/templates/quick-start";
+import { useSaveTemplateDialog } from "@/features/templates/save-template-dialog";
 import { HttpError } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useInvoice, useProfile, useSaveInvoice, useSetInvoiceStatus } from "@/lib/queries";
@@ -69,6 +71,8 @@ export function EditorPage() {
   const profile = useProfile().data;
   const signedIn = !!useSession().data;
   const showSignIn = useSignInDialog((s) => s.show);
+  const showSaveTemplate = useSaveTemplateDialog((s) => s.show);
+  const saveAsTemplate = () => (signedIn ? showSaveTemplate({ kind: "editor" }) : showSignIn("save templates and reuse them"));
   const saveMutation = useSaveInvoice();
   const statusMutation = useSetInvoiceStatus();
 
@@ -253,6 +257,10 @@ export function EditorPage() {
             {!signedIn && <Lock className="size-3! opacity-60" />}
             {signedIn && dirty && <span className="size-1.5 rounded-full bg-warn" aria-label="Unsaved changes" />}
           </Button>
+          <Button variant="ghost" size="sm" onClick={saveAsTemplate} title="Save as template">
+            <LayoutTemplate /> <span className="hidden lg:inline">template</span>
+            {!signedIn && <Lock className="size-3! opacity-60" />}
+          </Button>
           <Button size="sm" onClick={() => window.print()} title="Print (⌘P)">
             <Printer /> <span className="hidden sm:inline">print</span>
           </Button>
@@ -295,6 +303,7 @@ export function EditorPage() {
 
       <div className="grid flex-1 grid-cols-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className={cn("flex flex-col gap-4 p-4 md:p-6", tab !== "edit" && "hidden xl:flex")}>
+          {signedIn && <QuickStart />}
           <DetailsCard />
           <PartiesCard />
           <ItemsCard />

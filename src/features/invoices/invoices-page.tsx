@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Check, FilePlus2, Loader2, Search, Trash2 } from "lucide-react";
+import { Check, FilePlus2, LayoutTemplate, Loader2, Search, Trash2, X } from "lucide-react";
 import type { InvoiceStatus, InvoiceSummary } from "@shared/api";
 import { formatMinor } from "@shared/money";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/toaster";
 import { formatDate } from "@/lib/dates";
-import { useDeleteInvoice, useInvoices, useSetInvoiceStatus } from "@/lib/queries";
+import { useSaveTemplateDialog } from "@/features/templates/save-template-dialog";
+import { useBulkDeleteInvoices, useDeleteInvoice, useInvoices, useSetInvoiceStatus } from "@/lib/queries";
 import { timeAgo } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { displayStatus, StatusBadge } from "./status";
@@ -77,6 +79,54 @@ function RowActions({ inv }: { inv: InvoiceSummary }) {
   );
 }
 
+function BulkBar({ ids, onClear }: { ids: string[]; onClear: () => void }) {
+  const showSaveTemplate = useSaveTemplateDialog((s) => s.show);
+  const bulkDelete = useBulkDeleteInvoices();
+  const [confirm, setConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!confirm) return;
+    const t = setTimeout(() => setConfirm(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirm]);
+
+  return (
+    <div className="fixed inset-x-0 bottom-6 z-30 flex justify-center px-4 md:pl-60">
+      <div className="flex items-center gap-1 rounded-xl border border-border-strong bg-surface p-1.5 pl-4 shadow-2xl">
+        <span className="mr-2 font-mono text-xs">
+          <span className="text-accent">{ids.length}</span> selected
+        </span>
+        <Button variant="primary" size="sm" onClick={() => showSaveTemplate({ kind: "invoices", ids, onDone: onClear })}>
+          <LayoutTemplate /> <span className="hidden sm:inline">save as</span> template{ids.length > 1 && "s"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("hover:text-danger", confirm && "text-danger")}
+          disabled={bulkDelete.isPending}
+          onClick={() =>
+            confirm
+              ? bulkDelete.mutate(ids, {
+                  onSuccess: (r) => {
+                    toast.success(`Deleted ${r.deleted.length} invoice${r.deleted.length > 1 ? "s" : ""}`);
+                    onClear();
+                  },
+                  onError: () => toast.error("Couldn't delete."),
+                })
+              : setConfirm(true)
+          }
+        >
+          {bulkDelete.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
+          {confirm ? "sure?" : <span className="hidden sm:inline">delete</span>}
+        </Button>
+        <Button variant="ghost" size="icon" className="size-8" onClick={onClear} aria-label="Clear selection">
+          <X />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function InvoicesPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<InvoiceStatus | undefined>();
@@ -84,6 +134,26 @@ export function InvoicesPage() {
   const query = useDebounced(q);
   const { data, isPending, isError, isFetching } = useInvoices({ status, q: query || undefined });
   const filtered = !!(status || query);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Drop selections that are no longer visible (deleted or filtered out).
+  useEffect(() => {
+    if (!data) return;
+    setSelected((cur) => {
+      const visible = new Set(data.map((i) => i.id));
+      const next = new Set([...cur].filter((id) => visible.has(id)));
+      return next.size === cur.size ? cur : next;
+    });
+  }, [data]);
+
+  const toggle = (id: string) =>
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allSelected = !!data?.length && selected.size === data.length;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-10">
@@ -144,6 +214,14 @@ export function InvoicesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left font-mono text-[11px] text-muted">
+                <th className="w-px py-2.5 pl-4">
+                  <Checkbox
+                    label="Select all"
+                    checked={allSelected}
+                    indeterminate={selected.size > 0 && !allSelected}
+                    onChange={() => setSelected(allSelected ? new Set() : new Set(data.map((i) => i.id)))}
+                  />
+                </th>
                 <th className="px-4 py-2.5 font-normal">number</th>
                 <th className="px-4 py-2.5 font-normal">client</th>
                 <th className="hidden px-4 py-2.5 font-normal md:table-cell">issued</th>
@@ -158,8 +236,14 @@ export function InvoicesPage() {
                 <tr
                   key={inv.id}
                   onClick={() => navigate(`/invoices/${inv.id}`)}
-                  className="group cursor-pointer border-b border-border last:border-0 hover:bg-surface-2"
+                  className={cn(
+                    "group cursor-pointer border-b border-border last:border-0 hover:bg-surface-2",
+                    selected.has(inv.id) && "bg-accent-soft hover:bg-accent-soft",
+                  )}
                 >
+                  <td className="py-3 pl-4">
+                    <Checkbox label={`Select ${inv.number}`} checked={selected.has(inv.id)} onChange={() => toggle(inv.id)} />
+                  </td>
                   <td className="px-4 py-3">
                     <Link to={`/invoices/${inv.id}`} className="font-mono text-[13px] font-medium hover:text-accent" onClick={(e) => e.stopPropagation()}>
                       {inv.number}
@@ -182,6 +266,8 @@ export function InvoicesPage() {
           </table>
         )}
       </div>
+      {selected.size > 0 && <div className="h-20" />}
+      {selected.size > 0 && <BulkBar ids={[...selected]} onClear={() => setSelected(new Set())} />}
     </div>
   );
 }
