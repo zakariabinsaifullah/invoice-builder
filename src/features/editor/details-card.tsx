@@ -1,4 +1,4 @@
-import { CURRENCIES, PAYMENT_TERMS } from "@shared/invoice";
+import { CURRENCIES, PAYMENT_TERMS } from "@shared/constants";
 import { Field, Input, Select } from "@/components/ui/input";
 import { Card } from "./card";
 import { useEditor } from "./store";

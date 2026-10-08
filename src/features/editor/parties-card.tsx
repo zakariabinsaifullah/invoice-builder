@@ -6,7 +6,31 @@ import { Field, Input, Textarea } from "@/components/ui/input";
 import { Card } from "./card";
 import { useEditor } from "./store";
 
-const MAX_LOGO_BYTES = 512 * 1024;
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+
+/** Rasterize any image (incl. SVG/WebP) to a compact PNG data URL — the PDF renderer only embeds PNG/JPEG. */
+function toPngDataUrl(file: File, maxW = 600, maxH = 240): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth || maxW;
+      const h = img.naturalHeight || maxH;
+      const scale = Math.min(1, maxW / w, maxH / h);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(w * scale));
+      canvas.height = Math.max(1, Math.round(h * scale));
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("unreadable image"));
+    };
+    img.src = url;
+  });
+}
 
 function PartyFields({ side, party }: { side: "from" | "to"; party: Party }) {
   const setParty = useEditor((s) => s.setParty);
@@ -43,10 +67,10 @@ function LogoPicker() {
     setError("");
     if (!file) return;
     if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type)) return setError("Use PNG, JPG, SVG or WebP.");
-    if (file.size > MAX_LOGO_BYTES) return setError("Max 512 KB.");
-    const reader = new FileReader();
-    reader.onload = () => set("style", { ...style, logo: String(reader.result) });
-    reader.readAsDataURL(file);
+    if (file.size > MAX_LOGO_BYTES) return setError("Max 2 MB.");
+    toPngDataUrl(file)
+      .then((logo) => set("style", { ...style, logo }))
+      .catch(() => setError("Couldn't read that image."));
   };
 
   return (
@@ -61,7 +85,7 @@ function LogoPicker() {
       </button>
       <div className="min-w-0 text-xs text-muted">
         <div className="font-mono text-text">logo</div>
-        {error ? <div className="text-danger">{error}</div> : <div>PNG, JPG or SVG · max 512 KB</div>}
+        {error ? <div className="text-danger">{error}</div> : <div>PNG, JPG, SVG or WebP · max 2 MB</div>}
       </div>
       {logo && (
         <Button variant="ghost" size="icon" className="ml-auto" onClick={() => set("style", { ...style, logo: null })} aria-label="Remove logo">

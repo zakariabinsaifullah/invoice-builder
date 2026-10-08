@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, Eye, Lock, PencilLine, Printer, RotateCcw, Save } from "lucide-react";
+import { Download, Eye, Loader2, Lock, PencilLine, Printer, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { DetailsCard } from "@/features/editor/details-card";
@@ -19,6 +19,26 @@ export function EditorPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [toast, setToast] = useState("");
 
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  const loadPdf = () => import("@/features/preview/pdf/download");
+  const downloadPdf = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      const { downloadInvoicePdf } = await loadPdf();
+      await downloadInvoicePdf(useEditor.getState().invoice);
+    } catch (err) {
+      console.error(err);
+      setToast("PDF generation failed — try again, or use print → Save as PDF.");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
+  const downloadRef = useRef(downloadPdf);
+  downloadRef.current = downloadPdf;
+
   const promptSignIn = () => setToast("Sign in to save invoices and templates — coming soon.");
 
   useEffect(() => {
@@ -35,9 +55,14 @@ export function EditorPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === "s") {
         e.preventDefault();
         promptSignIn();
+      } else if (key === "e" && e.shiftKey) {
+        e.preventDefault();
+        void downloadRef.current();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -70,8 +95,16 @@ export function EditorPage() {
           <Button size="sm" onClick={() => window.print()} title="Print (⌘P)">
             <Printer /> <span className="hidden sm:inline">print</span>
           </Button>
-          <Button variant="primary" size="sm" disabled title="PDF download arrives in the next update">
-            <Download /> <span className="hidden sm:inline">pdf</span>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={downloadPdf}
+            onPointerEnter={() => void loadPdf()}
+            disabled={pdfBusy}
+            title="Download PDF (⌘⇧E)"
+          >
+            {pdfBusy ? <Loader2 className="animate-spin" /> : <Download />}
+            <span className="hidden sm:inline">{pdfBusy ? "rendering…" : "pdf"}</span>
           </Button>
         </div>
       </header>
@@ -107,7 +140,9 @@ export function EditorPage() {
           <SummaryCard />
           <p className="pb-4 text-center font-mono text-[11px] text-muted">
             guest draft lives in this tab only · <Kbd>⌘</Kbd>
-            <Kbd>P</Kbd> print
+            <Kbd>P</Kbd> print · <Kbd>⌘</Kbd>
+            <Kbd>⇧</Kbd>
+            <Kbd>E</Kbd> pdf
           </p>
         </div>
 
