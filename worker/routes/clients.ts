@@ -9,7 +9,14 @@ import { getDb, readJson, type AppEnv, type Db } from "../lib";
 const clientBody = partySchema.extend({ name: z.string().trim().min(1).max(200) });
 
 type Row = typeof client.$inferSelect;
-const toParty = (r: Row): Party => ({ name: r.name, email: r.email, phone: r.phone, address: r.address, taxId: r.taxId });
+const toParty = (r: Row) => ({
+  name: r.name,
+  designation: r.designation,
+  email: r.email,
+  phone: r.phone,
+  address: r.address,
+  taxId: r.taxId,
+});
 
 /** Save a bill-to party as a client the first time its name is used (case-insensitive). Best effort. */
 export async function rememberClient(db: Db, userId: string, to: Party) {
@@ -21,7 +28,7 @@ export async function rememberClient(db: Db, userId: string, to: Party) {
       .from(client)
       .where(and(eq(client.userId, userId), sql`lower(${client.name}) = lower(${name})`))
       .get();
-    if (!existing) await db.insert(client).values({ id: crypto.randomUUID(), userId, ...to, name });
+    if (!existing) await db.insert(client).values({ id: crypto.randomUUID(), userId, ...to, designation: to.designation ?? "", name });
   } catch (err) {
     console.error("rememberClient failed", err);
   }
@@ -52,7 +59,7 @@ export const clientRoutes = new Hono<AppEnv>()
     if (body instanceof Response) return body;
     const [row] = await getDb(c.env)
       .insert(client)
-      .values({ id: crypto.randomUUID(), userId: c.var.user.id, ...body })
+      .values({ id: crypto.randomUUID(), userId: c.var.user.id, ...body, designation: body.designation ?? "" })
       .returning();
     return c.json({ id: row.id, ...toParty(row), invoiceCount: 0, lastInvoiceDate: null }, 201);
   })
@@ -62,7 +69,7 @@ export const clientRoutes = new Hono<AppEnv>()
     if (body instanceof Response) return body;
     const [row] = await getDb(c.env)
       .update(client)
-      .set({ ...body, updatedAt: new Date() })
+      .set({ ...body, designation: body.designation ?? "", updatedAt: new Date() })
       .where(and(eq(client.id, c.req.param("id")), eq(client.userId, c.var.user.id)))
       .returning();
     return row ? c.json({ id: row.id, ...toParty(row) }) : c.json({ error: "not_found" }, 404);

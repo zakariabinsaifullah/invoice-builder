@@ -17,6 +17,14 @@ function PartyFields({ side, party }: { side: "from" | "to"; party: Party }) {
           <Input value={party.name} onChange={on("name")} placeholder="Your business or full name" />
         )}
       </Field>
+      <Field label="designation" hint="optional" className="col-span-2">
+        <Input
+          value={party.designation ?? ""}
+          onChange={on("designation")}
+          maxLength={120}
+          placeholder={side === "from" ? "e.g. Founder & Lead Developer" : "e.g. Head of Finance"}
+        />
+      </Field>
       <Field label="email">
         <Input type="email" value={party.email} onChange={on("email")} placeholder="hello@example.com" />
       </Field>

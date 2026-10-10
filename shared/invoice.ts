@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const partySchema = z.object({
   name: z.string().max(200).default(""),
+  /** Optional job title shown under the name, e.g. "Founder & CEO". */
+  designation: z.string().max(120).optional(),
   email: z.string().max(200).default(""),
   phone: z.string().max(60).default(""),
   address: z.string().max(500).default(""),

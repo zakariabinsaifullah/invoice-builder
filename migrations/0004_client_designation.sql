@@ -1,0 +1,1 @@
+ALTER TABLE `client` ADD `designation` text DEFAULT '' NOT NULL;

@@ -113,6 +113,7 @@ function PartyBlock({ label, party }: { label: string; party: Party }) {
     <View style={s.party}>
       <Text style={s.label}>// {label}</Text>
       <Text style={s.partyName}>{party.name || " "}</Text>
+      {party.designation?.trim() ? <Text style={{ color: c.s600 }}>{party.designation.trim()}</Text> : null}
       <View style={{ marginTop: 3 }}>
         {party.address ? <Text style={s.muted}>{party.address}</Text> : null}
         {party.email ? <Text style={s.muted}>{party.email}</Text> : null}
@@ -292,6 +293,7 @@ function MinimalBody({ invoice, t, money, items, sections, accent }: BodyProps) 
           <View key={label} style={s.party}>
             <Text style={m.label}>{label}</Text>
             <Text style={m.partyName}>{p.name || " "}</Text>
+            {p.designation?.trim() ? <Text style={{ color: c.s600 }}>{p.designation.trim()}</Text> : null}
             <View style={{ marginTop: 2 }}>
               {p.address ? <Text style={s.muted}>{p.address}</Text> : null}
               {p.email ? <Text style={s.muted}>{p.email}</Text> : null}

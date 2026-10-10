@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { formatMinor } from "@shared/money";
 import { useSignInDialog } from "@/features/auth/sign-in-dialog";
-import { blankInvoice, invoiceFromProfile, useEditor } from "@/features/editor/store";
+import { blankInvoice, invoiceFromProfile, partyFrom, useEditor } from "@/features/editor/store";
 import { useStartFromTemplate } from "@/features/templates/use-start-from-template";
 import { signOut, useSession } from "@/lib/auth-client";
 import { runEditorCommand } from "@/lib/commands";
@@ -132,7 +132,7 @@ export function CommandPalette() {
           const base = profile ? invoiceFromProfile(profile) : blankInvoice();
           useEditor
             .getState()
-            .startFromTemplate({ ...base, to: { name: c.name, email: c.email, phone: c.phone, address: c.address, taxId: c.taxId } }, null);
+            .startFromTemplate({ ...base, to: partyFrom(c) }, null);
           navigate("/");
         },
       });

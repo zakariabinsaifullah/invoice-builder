@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from "react";
 import { Users } from "lucide-react";
 import type { Party } from "@shared/invoice";
 import { Input } from "@/components/ui/input";
+import { partyFrom } from "@/features/editor/store";
 import { useSession } from "@/lib/auth-client";
 import { useClients } from "@/lib/queries";
 import { cn } from "@/lib/utils";
@@ -27,7 +28,7 @@ export function ClientNameInput({ value, onChange, onPick }: { value: string; on
   const pick = (i: number) => {
     const c = matches[i];
     if (!c) return;
-    onPick({ name: c.name, email: c.email, phone: c.phone, address: c.address, taxId: c.taxId });
+    onPick(partyFrom(c));
     setOpen(false);
   };
 

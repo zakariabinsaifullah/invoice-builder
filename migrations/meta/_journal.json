@@ -29,6 +29,13 @@
       "when": 1791450136724,
       "tag": "0003_backfill_clients",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791623744879,
+      "tag": "0004_client_designation",
+      "breakpoints": true
     }
   ]
 }

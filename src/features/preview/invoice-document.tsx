@@ -56,6 +56,7 @@ function MonoParty({ label, party, fallback }: { label: string; party: Party; fa
     <div className="min-w-0">
       <div className="text-[11px] text-stone-400">// {label}</div>
       <div className="mt-1.5 text-[13px] font-semibold text-stone-900">{party.name || <Ph>{fallback}</Ph>}</div>
+      {party.designation?.trim() && <div className="text-stone-600">{party.designation}</div>}
       <div className="mt-1 space-y-0.5 text-stone-500">
         {party.address && <div className="whitespace-pre-line">{party.address}</div>}
         {party.email && <div>{party.email}</div>}
@@ -177,6 +178,7 @@ function MinimalParty({ label, party, fallback }: { label: string; party: Party;
     <div className="min-w-0">
       <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400">{label}</div>
       <div className="mt-2 text-[14px] font-semibold text-stone-900">{party.name || <Ph>{fallback}</Ph>}</div>
+      {party.designation?.trim() && <div className="text-stone-600">{party.designation}</div>}
       <div className="mt-1 space-y-0.5 text-stone-500">
         {party.address && <div className="whitespace-pre-line">{party.address}</div>}
         {party.email && <div>{party.email}</div>}

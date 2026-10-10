@@ -6,7 +6,17 @@ import { addDays, today } from "@/lib/dates";
 
 export const newId = () => crypto.randomUUID();
 
-export const emptyParty = (): Party => ({ name: "", email: "", phone: "", address: "", taxId: "" });
+export const emptyParty = (): Party => ({ name: "", designation: "", email: "", phone: "", address: "", taxId: "" });
+
+/** Copy just the party fields from a saved client (or any party-like object). */
+export const partyFrom = (c: Party): Party => ({
+  name: c.name,
+  designation: c.designation ?? "",
+  email: c.email,
+  phone: c.phone,
+  address: c.address,
+  taxId: c.taxId,
+});
 
 export const newItem = (): LineItem => ({ id: newId(), description: "", quantity: 1, rate: 0 });
 

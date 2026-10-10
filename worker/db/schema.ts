@@ -90,6 +90,7 @@ export const client = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    designation: text("designation").notNull().default(""),
     email: text("email").notNull().default(""),
     phone: text("phone").notNull().default(""),
     address: text("address").notNull().default(""),

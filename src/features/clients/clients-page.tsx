@@ -7,7 +7,7 @@ import { toast } from "@/components/toaster";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/input";
-import { blankInvoice, emptyParty, invoiceFromProfile, useEditor } from "@/features/editor/store";
+import { blankInvoice, emptyParty, invoiceFromProfile, partyFrom, useEditor } from "@/features/editor/store";
 import { formatDate } from "@/lib/dates";
 import { useClients, useDeleteClient, useProfile, useSaveClient } from "@/lib/queries";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,9 @@ function ClientDialog({ client, onClose }: { client: (Party & { id?: string }) |
       <div className="grid grid-cols-2 gap-3">
         <Field label="name" className="col-span-2">
           <Input value={form.name} onChange={set("name")} autoFocus placeholder="Client or company" />
+        </Field>
+        <Field label="designation" hint="optional" className="col-span-2">
+          <Input value={form.designation ?? ""} onChange={set("designation")} maxLength={120} placeholder="e.g. Head of Finance" />
         </Field>
         <Field label="email">
           <Input type="email" value={form.email} onChange={set("email")} />
@@ -107,7 +110,7 @@ export function ClientsPage() {
 
   const invoiceFor = (c: ClientSummary) => {
     const base = profile ? invoiceFromProfile(profile) : blankInvoice();
-    useEditor.getState().startFromTemplate({ ...base, to: { name: c.name, email: c.email, phone: c.phone, address: c.address, taxId: c.taxId } }, null);
+    useEditor.getState().startFromTemplate({ ...base, to: partyFrom(c) }, null);
     navigate("/");
   };
 
@@ -166,6 +169,7 @@ export function ClientsPage() {
                 <tr key={c.id} className="border-b border-border last:border-0 hover:bg-surface-2">
                   <td className="max-w-56 px-4 py-3">
                     <div className="truncate font-medium">{c.name}</div>
+                    {c.designation && <div className="truncate text-xs text-muted">{c.designation}</div>}
                     {c.address && <div className="truncate text-xs text-muted">{c.address.split("\n")[0]}</div>}
                   </td>
                   <td className="hidden max-w-56 truncate px-4 py-3 font-mono text-xs text-muted md:table-cell">{c.email || "—"}</td>

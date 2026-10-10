@@ -87,6 +87,9 @@ export function SettingsPage() {
               <Field label="name" className="col-span-2">
                 <Input value={form.business.name} onChange={(e) => setBiz("name", e.target.value)} placeholder="Your business or full name" />
               </Field>
+              <Field label="designation" hint="optional" className="col-span-2">
+                <Input value={form.business.designation ?? ""} onChange={(e) => setBiz("designation", e.target.value)} maxLength={120} placeholder="e.g. Founder & Lead Developer" />
+              </Field>
               <Field label="email">
                 <Input type="email" value={form.business.email} onChange={(e) => setBiz("email", e.target.value)} placeholder="hello@example.com" />
               </Field>

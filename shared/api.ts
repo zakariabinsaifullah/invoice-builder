@@ -79,6 +79,7 @@ export type ApiError = { error: string; message?: string; issues?: unknown };
 export type ClientSummary = {
   id: string;
   name: string;
+  designation: string;
   email: string;
   phone: string;
   address: string;
